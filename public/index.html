@@ -1,15 +1,222 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta charset="utf-8">
-    <title>ようこそ、jigインターンへ！</title>
-    <link rel="icon" href="data:image/x-icon;,">
-    <link rel="stylesheet" href="./styles.css">
-    <script type="module" src="./index.js"></script>
-  </head>
-  <body>
-    <!-- サーバーから返ってきた文字を表示する場所 -->
-    <h1 id="welcomeMessage"></h1>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>ORBIT LAB — Rocket Launch Simulator</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./index.js" defer></script>
+</head>
+<body>
+  <div class="app-shell" id="app" data-state="idle">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="ORBIT LAB ホーム">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <path d="M16 3c5 4 7 9 7 15l-3 6h-8l-3-6c0-6 2-11 7-15Z" />
+            <circle cx="16" cy="13" r="3" />
+            <path d="m10 18-5 5 7 1m10-6 5 5-7 1" />
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>ORBIT LAB</strong>
+          <small>ROCKET FLIGHT SYSTEM</small>
+        </span>
+      </a>
+
+      <div class="mission-state" role="status" aria-live="polite">
+        <span class="state-light" aria-hidden="true"></span>
+        <span>
+          <small>MISSION 01</small>
+          <strong id="mission-status">STANDBY</strong>
+        </span>
+      </div>
+    </header>
+
+    <main class="cockpit">
+      <section class="flight-deck" aria-label="ロケット飛行画面">
+        <div class="deck-bar deck-bar--top">
+          <span><i class="signal-dot" aria-hidden="true"></i> FLIGHT WINDOW</span>
+          <span>TRAJECTORY <b id="trajectory-label">LOCKED</b></span>
+        </div>
+
+        <div class="flight-stage" id="flight-stage">
+          <div class="space-glow" aria-hidden="true"></div>
+          <div class="stars stars--far" aria-hidden="true"></div>
+          <div class="stars stars--near" aria-hidden="true"></div>
+          <div class="orbital-line orbital-line--one" aria-hidden="true"></div>
+          <div class="orbital-line orbital-line--two" aria-hidden="true"></div>
+
+          <div class="altitude-scale" aria-hidden="true">
+            <span><i></i> 10K</span>
+            <span><i></i> 7.5K</span>
+            <span><i></i> 5K</span>
+            <span><i></i> 2.5K</span>
+          </div>
+
+          <div class="live-altimeter">
+            <span>ALTITUDE</span>
+            <strong><output id="altitude-live">0</output><small> km</small></strong>
+          </div>
+
+          <div class="celebration" id="celebration" aria-hidden="true">
+            <div class="success-orbit"></div>
+            <div class="success-emblem">
+              <span>MISSION SUCCESS</span>
+              <strong>軌道到達！</strong>
+            </div>
+            <div class="confetti" id="confetti"></div>
+          </div>
+
+          <div class="flight-event" id="flight-event" aria-hidden="true">
+            <span id="event-label">BURST ALTITUDE</span>
+            <strong><b id="event-altitude">0</b> km</strong>
+          </div>
+
+          <div class="rocket-vehicle" id="rocket" aria-label="ロケット">
+            <div class="exhaust exhaust--left" aria-hidden="true"></div>
+            <div class="exhaust exhaust--right" aria-hidden="true"></div>
+            <svg class="rocket" viewBox="0 0 120 216" role="img" aria-label="垂直に立つロケット">
+              <defs>
+                <linearGradient id="rocket-hull" x1="0" x2="1">
+                  <stop offset="0" stop-color="#cbd8df" />
+                  <stop offset=".5" stop-color="#f8fbf7" />
+                  <stop offset="1" stop-color="#aebec8" />
+                </linearGradient>
+                <linearGradient id="rocket-window" x1="0" y1="0" x2="1" y2="1">
+                  <stop stop-color="#bdf7ff" />
+                  <stop offset="1" stop-color="#2589ab" />
+                </linearGradient>
+              </defs>
+              <path class="flame flame--outer" d="M47 174c1 20 5 32 13 40 8-8 12-20 13-40Z" />
+              <path class="flame flame--inner" d="M53 174c1 13 3 22 7 28 4-6 6-15 7-28Z" />
+              <path class="rocket-fin" d="M37 126 14 172l31-9Zm46 0 23 46-31-9Z" />
+              <path class="rocket-body" d="M60 4C39 24 32 52 35 109l7 58h36l7-58C88 52 81 24 60 4Z" />
+              <path class="rocket-nose" d="M60 4C50 14 43 26 39 42h42C77 26 70 14 60 4Z" />
+              <path class="rocket-band" d="M35 105h50l-1 17H36Z" />
+              <circle class="rocket-window" cx="60" cy="69" r="15" />
+              <circle class="rocket-window-glint" cx="55" cy="64" r="4" />
+              <path class="rocket-seam" d="M60 5v31M43 145h34" />
+            </svg>
+          </div>
+
+          <div class="explosion" id="explosion" aria-hidden="true">
+            <span class="shockwave shockwave--one"></span>
+            <span class="shockwave shockwave--two"></span>
+            <span class="blast-core"></span>
+            <div class="debris" id="debris"></div>
+          </div>
+
+          <div class="launch-pad" aria-hidden="true">
+            <div class="pad-light pad-light--one"></div>
+            <div class="pad-light pad-light--two"></div>
+            <div class="pad-light pad-light--three"></div>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="deck-bar deck-bar--bottom">
+          <span>ENGINE <b id="engine-label">IDLE</b></span>
+          <span class="success-rule"><i aria-hidden="true"></i> SUCCESS: OUTPUT &amp; STABILITY ≥ 90%</span>
+        </div>
+      </section>
+
+      <aside class="mission-panel" aria-label="発射コントロール">
+        <section class="mode-panel setup-panel" id="setup-panel">
+          <div class="panel-heading">
+            <p class="eyebrow"><span>01</span> LAUNCH CONTROL</p>
+            <h1>打ち上げ<br><em>パラメーター</em></h1>
+            <p class="panel-description">2つの値を調整して、ロケットを安全に軌道へ送り届けよう。</p>
+          </div>
+
+          <div class="parameter-grid">
+            <div class="parameter-card" id="power-card">
+              <div class="parameter-head">
+                <label for="power">
+                  <span class="parameter-icon" aria-hidden="true">↟</span>
+                  <span><strong>出力強度</strong><small>OUTPUT</small></span>
+                </label>
+                <output id="power-value" for="power">82%</output>
+              </div>
+              <div class="range-shell">
+                <input id="power" type="range" min="0" max="100" value="82" aria-describedby="threshold-hint">
+                <span class="target-marker" aria-hidden="true"><i>90</i></span>
+              </div>
+              <div class="range-labels" aria-hidden="true"><span>0</span><span>100</span></div>
+            </div>
+
+            <div class="parameter-card" id="stability-card">
+              <div class="parameter-head">
+                <label for="stability">
+                  <span class="parameter-icon" aria-hidden="true">◎</span>
+                  <span><strong>安定性</strong><small>STABILITY</small></span>
+                </label>
+                <output id="stability-value" for="stability">78%</output>
+              </div>
+              <div class="range-shell">
+                <input id="stability" type="range" min="0" max="100" value="78" aria-describedby="threshold-hint">
+                <span class="target-marker" aria-hidden="true"><i>90</i></span>
+              </div>
+              <div class="range-labels" aria-hidden="true"><span>0</span><span>100</span></div>
+            </div>
+          </div>
+
+          <div class="threshold-hint" id="threshold-hint">
+            <span class="threshold-icon" aria-hidden="true">◇</span>
+            <span><strong id="readiness-title">軌道投入まであと12</strong><small>両方90%以上で打ち上げ成功</small></span>
+          </div>
+
+          <button class="launch-button" id="launch-button" type="button">
+            <span class="launch-button__icon" aria-hidden="true">▲</span>
+            <span><strong>発射する</strong><small>LAUNCH ROCKET</small></span>
+            <span class="launch-button__arrow" aria-hidden="true">→</span>
+          </button>
+        </section>
+
+        <section class="mode-panel flight-panel" id="flight-panel" hidden>
+          <div class="flight-copy">
+            <div class="radar" aria-hidden="true"><i></i><span></span></div>
+            <p class="eyebrow">LIVE TELEMETRY</p>
+            <h2>打ち上げ中</h2>
+            <p>機体を追跡しています。<br>パラメーターはロックされました。</p>
+          </div>
+          <div class="telemetry-card">
+            <span>現在の高度</span>
+            <strong><b id="panel-altitude">0</b><small> km</small></strong>
+            <div class="telemetry-progress"><i id="telemetry-progress"></i></div>
+          </div>
+        </section>
+
+        <section class="mode-panel result-panel" id="result-panel" hidden aria-live="polite">
+          <div class="result-heading">
+            <span class="result-icon" id="result-icon" aria-hidden="true">✓</span>
+            <p class="eyebrow" id="result-kicker">MISSION COMPLETE</p>
+            <h2 id="result-title">打ち上げ成功</h2>
+            <p id="result-message">ロケットは安定した軌道へ到達しました。</p>
+          </div>
+
+          <dl class="result-metrics">
+            <div>
+              <dt>出力強度</dt>
+              <dd><b id="result-power">0</b><small>%</small></dd>
+            </div>
+            <div>
+              <dt>安定性</dt>
+              <dd><b id="result-stability">0</b><small>%</small></dd>
+            </div>
+            <div class="altitude-result">
+              <dt>到達高度</dt>
+              <dd><b id="result-altitude">0</b><small> km</small></dd>
+            </div>
+          </dl>
+
+          <button class="retry-button" id="retry-button" type="button">
+            <span aria-hidden="true">↻</span> もう一度挑戦
+          </button>
+        </section>
+      </aside>
+    </main>
+  </div>
+</body>
 </html>
