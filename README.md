@@ -1,24 +1,113 @@
-# template-deno-dev
+# Engifar
 
-[Deno](https://deno.land/)を使った開発のテンプレートです。  
-[Deno Deploy](https://deno.com/deploy)を利用して外部へ公開することを想定しています。  
+初対面のチームがお互いのWeb開発理解度を知るための、リアルタイムクイズアプリです。
+現在はDeno 2 + Deno Deploy + PostgreSQLを前提に、バックエンドの土台を実装しています。
 
-## Deno Deploy の利用方法
+## バックエンドの現在地
 
-↓以上の詳細は公式リファレンスへ。
+- PostgreSQLの5テーブル（`room`、`participant`、`game_session`、
+  `session_participant`、`answer`）
+- 部屋作成、部屋参加、ロビー情報取得
+- ホストによるゲーム開始、次の問題開始、ゲーム終了
+- 参加者による回答登録と、制限時間内の回答変更
+- DB接続を含むヘルスチェック
+- API単体テストとDBスキーマの契約テスト
 
-1. [Deno Deploy](https://deno.com/deploy)にアクセスして、右上の「Sign In」からGitHubアカウントでのOAuthログインでアカウントを作成orログインしてください。
-2. 青い「+ New Project」から「Create a project」画面に遷移して、「Deploy an existing GitHub repository」側から GitHub repository の「Select a repository」をクリック
-3. Create a project from GitHub の画面で、デプロイするリポジトリを選んでこのリポジトリをテンプレートにした場合は「No build step」で、メインのDenoのコードが書いてあるファイルをエントリポイントに指定して「Create & Deploy」します。
-4. ダイアログが出て Deployed になれば成功。右上の青い「View」からデプロイされたページが確認できるはずです。
+リアルタイム配信、問題データ、採点、切断処理、結果APIは次の実装範囲です。
 
-## コミットテンプレートとemoji prefixについて
+## ローカル起動
 
-コミットテンプレートは以下のようにして使用できます。  
+必要なものはDeno 2とPostgreSQLです。
+
+1. `.env.example` を参考に、ローカル用の `DATABASE_URL` を環境変数へ設定します。
+2. 初期スキーマを適用します。
+3. 開発サーバーを起動します。
 
 ```shell
-cd <リポジトリ直下>
-git config commit.template ./.commit_template
+deno task db:migrate
+deno task dev
 ```
 
-emoji prefix にはコミット履歴が可愛くなる他にもメリットがありますが、コミット履歴が可愛くなるのが好きで使ってます。
+`.env` を使う場合は、Denoのタスク実行時に読み込めます。
+
+```shell
+deno task --env-file=.env db:migrate
+deno task --env-file=.env dev
+```
+
+確認用URLは `http://localhost:8000/api/health` です。
+
+## 開発コマンド
+
+```shell
+deno task check
+deno task test
+deno task lint
+deno task fmt:check
+```
+
+## API
+
+JSONレスポンスは成功時に `{ "data": ... }`、失敗時に
+`{ "error": { "code": "...", "message": "..." } }` の形で返します。
+
+| Method | Path | 用途 | 認証 |
+| --- | --- | --- | --- |
+| `GET` | `/api/health` | サーバー・DB確認 | なし |
+| `POST` | `/api/rooms` | 部屋とホストを作成 | なし |
+| `POST` | `/api/rooms/:code/participants` | 部屋へ参加 | なし |
+| `GET` | `/api/rooms/:code` | 部屋と参加者一覧を取得 | なし |
+| `POST` | `/api/rooms/:code/sessions` | 12問のゲームを開始 | ホスト |
+| `POST` | `/api/sessions/:id/questions/:index/start` | 次の問題を開始 | ホスト |
+| `PUT` | `/api/sessions/:id/answers/:index` | 回答を登録・変更 | 参加者 |
+| `POST` | `/api/sessions/:id/complete` | ゲームを終了 | ホスト |
+
+部屋作成・参加レスポンスの `accessToken` を、以降のリクエストで
+`Authorization: Bearer <accessToken>` として送ります。DBにはトークン本体ではなくSHA-256ハッシュだけを保存します。
+
+### 部屋作成例
+
+```shell
+curl -X POST http://localhost:8000/api/rooms \
+  -H "Content-Type: application/json" \
+  -d '{"displayName":"Alice"}'
+```
+
+### 回答例
+
+選択肢番号は `0` から `3` です。同じ問題への回答は15秒以内なら上書きされます。
+
+```shell
+curl -X PUT http://localhost:8000/api/sessions/<session-id>/answers/0 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
+  -d '{"selectedOption":2}'
+```
+
+## Deno Deploy
+
+Deno Deploy側で作成済みPostgreSQLをEngifarアプリへ割り当てると、環境ごとの
+`DATABASE_URL` と `PG*` が自動注入されます。接続情報をGitへコミットする必要はありません。
+
+初回はDeno DeployのDatabase Explorerで
+[`migrations/001_initial_schema.sql`](./migrations/001_initial_schema.sql) を適用するか、
+対象環境の接続URLをローカルへ設定して `deno task db:migrate` を実行してください。
+デプロイのエントリポイントは従来どおり `server.js` です。
+
+Gitブランチ・プレビュー環境には本番とは別の論理DBが割り当てられるため、
+ブランチ環境にも同じ初期スキーマを適用します。
+
+## 今回置いた暫定ルール
+
+仕様書で未決定の項目は、変更しやすい初期値として次のように扱っています。
+
+- 内部IDはPostgreSQLのUUID
+- 部屋コードは紛らわしい文字を除いた6文字（DBは6〜8文字を許容）
+- 同名ユーザーは許可
+- 部屋を作成した参加者をホストとする
+- ゲーム開始後の途中参加は不許可
+- デモは12問、各問題15秒
+- 問題本文と正解はDBへ保存せず、アプリケーション内で管理
+
+ブラウザ再読み込み後のトークン復元方法、WebSocket/SSEの選択、切断判定、採点の難易度補正は
+まだ確定していません。

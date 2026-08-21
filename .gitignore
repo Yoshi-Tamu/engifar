@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+.deno/
+node_modules/
+coverage/
