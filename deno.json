@@ -1,5 +1,8 @@
 {
   "tasks": {
+    "dev": "deno run --watch --allow-net --allow-env --unstable-kv main.ts",
     "test": "deno test --allow-read --allow-write --allow-env --unstable-kv"
-  }
+  },
+  "fmt": {},
+  "lint": {}
 }
