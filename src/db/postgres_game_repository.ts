@@ -57,7 +57,11 @@ interface AnswerRow extends QueryResultRow {
   answered_at: Date | string;
 }
 
-interface AuthorizedSessionRow extends SessionRow {
+interface TimedSessionRow extends SessionRow {
+  answer_window_open: boolean | null;
+}
+
+interface AuthorizedSessionRow extends TimedSessionRow {
   participant_id: string;
 }
 
@@ -336,11 +340,7 @@ export class PostgresGameRepository implements GameRepository {
       if (session.status !== "active") {
         throw new ApiError(409, "SESSION_NOT_ACTIVE", "The session is not active");
       }
-      if (
-        session.question_started_at !== null &&
-        Date.now() <
-          new Date(session.question_started_at).getTime() + session.answer_time_seconds * 1_000
-      ) {
+      if (session.answer_window_open) {
         throw new ApiError(
           409,
           "ANSWER_WINDOW_OPEN",
@@ -389,7 +389,9 @@ export class PostgresGameRepository implements GameRepository {
       const result = await client.query<AuthorizedSessionRow>(
         `SELECT gs.id, gs.room_id, gs.session_number, gs.status, gs.question_count,
            gs.answer_time_seconds, gs.current_question_index, gs.question_started_at,
-           gs.started_at, gs.finished_at, p.id AS participant_id
+           gs.started_at, gs.finished_at, p.id AS participant_id,
+           clock_timestamp() <= gs.question_started_at
+             + make_interval(secs => gs.answer_time_seconds) AS answer_window_open
          FROM game_session gs
          JOIN session_participant sp ON sp.game_session_id = gs.id
          JOIN participant p ON p.id = sp.participant_id
@@ -409,8 +411,7 @@ export class PostgresGameRepository implements GameRepository {
         throw new ApiError(409, "QUESTION_NOT_ACTIVE", "This question is not active");
       }
 
-      const elapsedMs = Date.now() - new Date(session.question_started_at).getTime();
-      if (elapsedMs > session.answer_time_seconds * 1_000) {
+      if (!session.answer_window_open) {
         throw new ApiError(409, "ANSWER_TIME_EXPIRED", "The answer time has expired");
       }
 
@@ -472,11 +473,7 @@ export class PostgresGameRepository implements GameRepository {
       if (session.current_question_index !== session.question_count - 1) {
         throw new ApiError(409, "QUESTIONS_REMAINING", "Not all questions have started");
       }
-      if (
-        session.question_started_at !== null &&
-        Date.now() <
-          new Date(session.question_started_at).getTime() + session.answer_time_seconds * 1_000
-      ) {
+      if (session.answer_window_open) {
         throw new ApiError(
           409,
           "ANSWER_WINDOW_OPEN",
@@ -511,11 +508,13 @@ export class PostgresGameRepository implements GameRepository {
     client: PoolClient,
     sessionId: string,
     tokenHash: string,
-  ): Promise<SessionRow> {
-    const result = await client.query<SessionRow>(
+  ): Promise<TimedSessionRow> {
+    const result = await client.query<TimedSessionRow>(
       `SELECT gs.id, gs.room_id, gs.session_number, gs.status, gs.question_count,
          gs.answer_time_seconds, gs.current_question_index, gs.question_started_at,
-         gs.started_at, gs.finished_at
+         gs.started_at, gs.finished_at,
+         clock_timestamp() <= gs.question_started_at
+           + make_interval(secs => gs.answer_time_seconds) AS answer_window_open
        FROM game_session gs
        JOIN participant p ON p.room_id = gs.room_id
        WHERE gs.id = $1

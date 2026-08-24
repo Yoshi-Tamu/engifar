@@ -4,8 +4,10 @@ import { applyMigrations } from "../src/db/migrate.ts";
 const pool = createPool();
 
 try {
-  await applyMigrations(pool);
-  console.log("Applied migrations/001_initial_schema.sql");
+  const applied = await applyMigrations(pool);
+  console.log(
+    applied.length > 0 ? `Applied migrations: ${applied.join(", ")}` : "Database is up to date",
+  );
 } finally {
   await pool.end();
 }

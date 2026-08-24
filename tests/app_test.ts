@@ -139,6 +139,25 @@ Deno.test("POST /api/rooms requires JSON", async () => {
   assert.equal((await response.json()).error.code, "JSON_REQUIRED");
 });
 
+Deno.test("POST /api/rooms limits streamed JSON without Content-Length", async () => {
+  const oversizedJson = JSON.stringify({ displayName: "a".repeat(17 * 1024) });
+  const response = await createApp(new FakeRepository())(
+    new Request("http://localhost/api/rooms", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(oversizedJson));
+          controller.close();
+        },
+      }),
+    }),
+  );
+
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).error.code, "BODY_TOO_LARGE");
+});
+
 Deno.test("joining a room normalizes its code", async () => {
   const repository = new FakeRepository();
   const response = await createApp(repository)(

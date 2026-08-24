@@ -43,7 +43,36 @@ async function readJsonObject(request: Request): Promise<JsonRecord> {
   }
 
   try {
-    const value: unknown = await request.json();
+    const reader = request.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    if (reader) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          totalBytes += value.byteLength;
+          if (totalBytes > MAX_JSON_BODY_BYTES) {
+            await reader.cancel();
+            throw new ApiError(413, "BODY_TOO_LARGE", "JSON body is too large");
+          }
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+
+    const bytes = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new ApiError(400, "INVALID_JSON", "JSON body must be an object");
     }

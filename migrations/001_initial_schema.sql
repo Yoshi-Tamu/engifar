@@ -1,8 +1,3 @@
-BEGIN;
-
--- Prevent concurrent cold starts from applying this migration at the same time.
-SELECT pg_advisory_xact_lock(hashtext('engifar_schema_migrations'));
-
 CREATE TABLE IF NOT EXISTS room (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code varchar(8) NOT NULL UNIQUE,
@@ -110,5 +105,3 @@ CREATE TABLE IF NOT EXISTS answer (
 
 CREATE INDEX IF NOT EXISTS answer_session_question_idx
   ON answer (game_session_id, question_index);
-
-COMMIT;
