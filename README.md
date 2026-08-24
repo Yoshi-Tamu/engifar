@@ -39,9 +39,14 @@ deno task --env-file=.env dev
 ```shell
 deno task check
 deno task test
+deno task test:db
 deno task lint
 deno task fmt:check
 ```
+
+`test:db` は `TEST_DATABASE_URL` で指定したPostgreSQL内にテスト専用スキーマを作成して、
+Repository・トランザクション・制約を実際に検証します。各テストの終了時に専用スキーマだけを削除します。
+`.env` を使う場合は `deno task --env-file=.env test:db` で実行できます。
 
 ## API
 
