@@ -1,11 +1,10 @@
 import { createPool } from "../src/db/pool.ts";
+import { applyMigrations } from "../src/db/migrate.ts";
 
-const migrationUrl = new URL("../migrations/001_initial_schema.sql", import.meta.url);
-const migration = await Deno.readTextFile(migrationUrl);
 const pool = createPool();
 
 try {
-  await pool.query(migration);
+  await applyMigrations(pool);
   console.log("Applied migrations/001_initial_schema.sql");
 } finally {
   await pool.end();

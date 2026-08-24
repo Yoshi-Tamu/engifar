@@ -1,13 +1,22 @@
 import { createApp } from "./app.ts";
+import { applyMigrations } from "./db/migrate.ts";
 import { createPool } from "./db/pool.ts";
 import { PostgresGameRepository } from "./db/postgres_game_repository.ts";
 
-export function startServer(): Deno.HttpServer {
+export async function startServer(): Promise<Deno.HttpServer> {
   const pool = createPool();
-  const repository = new PostgresGameRepository(pool);
-  return Deno.serve(createApp(repository));
+  try {
+    await applyMigrations(pool);
+    console.log("Database migrations applied");
+
+    const repository = new PostgresGameRepository(pool);
+    return Deno.serve(createApp(repository));
+  } catch (error) {
+    await pool.end();
+    throw error;
+  }
 }
 
 if (import.meta.main) {
-  startServer();
+  await startServer();
 }

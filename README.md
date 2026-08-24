@@ -20,18 +20,15 @@
 必要なものはDeno 2とPostgreSQLです。
 
 1. `.env.example` を参考に、ローカル用の `DATABASE_URL` を環境変数へ設定します。
-2. 初期スキーマを適用します。
-3. 開発サーバーを起動します。
+2. 開発サーバーを起動します。初期スキーマは起動時に自動適用されます。
 
 ```shell
-deno task db:migrate
 deno task dev
 ```
 
 `.env` を使う場合は、Denoのタスク実行時に読み込めます。
 
 ```shell
-deno task --env-file=.env db:migrate
 deno task --env-file=.env dev
 ```
 
@@ -89,10 +86,10 @@ curl -X PUT http://localhost:8000/api/sessions/<session-id>/answers/0 \
 Deno Deploy側で作成済みPostgreSQLをEngifarアプリへ割り当てると、環境ごとの
 `DATABASE_URL` と `PG*` が自動注入されます。接続情報をGitへコミットする必要はありません。
 
-初回はDeno DeployのDatabase Explorerで
-[`migrations/001_initial_schema.sql`](./migrations/001_initial_schema.sql) を適用するか、
-対象環境の接続URLをローカルへ設定して `deno task db:migrate` を実行してください。
-デプロイのエントリポイントは `src/server.ts` です。
+デプロイのエントリポイントは `src/server.ts` です。サーバー起動時に
+[`migrations/001_initial_schema.sql`](./migrations/001_initial_schema.sql) が自動適用されます。
+SQLは冪等で、同時起動時はPostgreSQLのアドバイザリーロックで直列化されます。
+手動適用が必要な場合は、対象環境の接続URLを設定して `deno task db:migrate` を実行できます。
 
 Gitブランチ・プレビュー環境には本番とは別の論理DBが割り当てられるため、
 ブランチ環境にも同じ初期スキーマを適用します。

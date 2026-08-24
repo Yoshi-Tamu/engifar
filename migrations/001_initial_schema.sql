@@ -1,5 +1,8 @@
 BEGIN;
 
+-- Prevent concurrent cold starts from applying this migration at the same time.
+SELECT pg_advisory_xact_lock(hashtext('engifar_schema_migrations'));
+
 CREATE TABLE IF NOT EXISTS room (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code varchar(8) NOT NULL UNIQUE,
