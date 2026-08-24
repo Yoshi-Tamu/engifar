@@ -92,7 +92,7 @@ Deno Deploy側で作成済みPostgreSQLをEngifarアプリへ割り当てると�
 初回はDeno DeployのDatabase Explorerで
 [`migrations/001_initial_schema.sql`](./migrations/001_initial_schema.sql) を適用するか、
 対象環境の接続URLをローカルへ設定して `deno task db:migrate` を実行してください。
-デプロイのエントリポイントは従来どおり `server.js` です。
+デプロイのエントリポイントは `src/server.ts` です。
 
 Gitブランチ・プレビュー環境には本番とは別の論理DBが割り当てられるため、
 ブランチ環境にも同じ初期スキーマを適用します。

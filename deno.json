@@ -5,9 +5,9 @@
     "@types/pg": "npm:@types/pg@^8.15.5"
   },
   "tasks": {
-    "dev": "deno run --watch=server.js,src/,public/ --allow-net --allow-read=public --allow-env=DATABASE_URL,DB_POOL_SIZE,PGUSER,PGDATABASE,PGPORT,PGHOST,PGPASSWORD,PGBINARY,PGOPTIONS,PGSSLMODE,PGSSLNEGOTIATION,PGCLIENT_ENCODING,PGREPLICATION,PGAPPNAME,PGCONNECT_TIMEOUT,PGPASSFILE,USER,USERNAME,NODE_PG_FORCE_NATIVE server.js",
-    "start": "deno run --allow-net --allow-read=public --allow-env=DATABASE_URL,DB_POOL_SIZE,PGUSER,PGDATABASE,PGPORT,PGHOST,PGPASSWORD,PGBINARY,PGOPTIONS,PGSSLMODE,PGSSLNEGOTIATION,PGCLIENT_ENCODING,PGREPLICATION,PGAPPNAME,PGCONNECT_TIMEOUT,PGPASSFILE,USER,USERNAME,NODE_PG_FORCE_NATIVE server.js",
-    "check": "deno check server.js scripts/migrate.ts src/ tests/",
+    "dev": "deno run --watch=src/,public/ --allow-net --allow-read=public --allow-env=DATABASE_URL,DB_POOL_SIZE,PGUSER,PGDATABASE,PGPORT,PGHOST,PGPASSWORD,PGBINARY,PGOPTIONS,PGSSLMODE,PGSSLNEGOTIATION,PGCLIENT_ENCODING,PGREPLICATION,PGAPPNAME,PGCONNECT_TIMEOUT,PGPASSFILE,USER,USERNAME,NODE_PG_FORCE_NATIVE src/server.ts",
+    "start": "deno run --allow-net --allow-read=public --allow-env=DATABASE_URL,DB_POOL_SIZE,PGUSER,PGDATABASE,PGPORT,PGHOST,PGPASSWORD,PGBINARY,PGOPTIONS,PGSSLMODE,PGSSLNEGOTIATION,PGCLIENT_ENCODING,PGREPLICATION,PGAPPNAME,PGCONNECT_TIMEOUT,PGPASSFILE,USER,USERNAME,NODE_PG_FORCE_NATIVE src/server.ts",
+    "check": "deno check scripts/migrate.ts src/ tests/",
     "test": "deno test --allow-read=migrations tests/",
     "db:migrate": "deno run --allow-net --allow-read=migrations --allow-env=DATABASE_URL,DB_POOL_SIZE,PGUSER,PGDATABASE,PGPORT,PGHOST,PGPASSWORD,PGBINARY,PGOPTIONS,PGSSLMODE,PGSSLNEGOTIATION,PGCLIENT_ENCODING,PGREPLICATION,PGAPPNAME,PGCONNECT_TIMEOUT,PGPASSFILE,USER,USERNAME,NODE_PG_FORCE_NATIVE scripts/migrate.ts",
     "fmt:check": "deno fmt --check",
@@ -18,7 +18,7 @@
     "types": ["npm:@types/pg"]
   },
   "fmt": {
-    "include": ["deno.json", "server.js", "src/", "scripts/", "tests/"],
+    "include": ["deno.json", "src/", "scripts/", "tests/"],
     "lineWidth": 100,
     "semiColons": true,
     "singleQuote": false

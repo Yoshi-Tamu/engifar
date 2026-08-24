@@ -7,3 +7,7 @@ export function startServer(): Deno.HttpServer {
   const repository = new PostgresGameRepository(pool);
   return Deno.serve(createApp(repository));
 }
+
+if (import.meta.main) {
+  startServer();
+}
