@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-const message = await fetch("/welcome-message")
-document.querySelector("#welcomeMessage").innerText = await message.text()
-=======
 (() => {
   "use strict";
 
@@ -623,7 +619,7 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
     function showReview(question, token) {
       if (token !== phaseToken) return;
       elements.card.dataset.mode = "review";
-      elements.timerLabel.textContent = "確認";
+      elements.timerLabel.textContent = "答え合わせ";
       elements.reviewCount.hidden = false;
 
       const isCorrect = selectedChoice === question.answer;
@@ -686,7 +682,7 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
       elements.category.textContent = question.category;
       elements.difficulty.textContent = difficultyLabel(question.weight);
       elements.progress.style.width = `${((questionIndex + 1) / questionBank.length) * 100}%`;
-      elements.timerLabel.textContent = "回答";
+      elements.timerLabel.textContent = "回答時間";
       elements.timerValue.textContent = String(ANSWER_SECONDS);
       elements.timer.style.setProperty("--timer-progress", "1");
       elements.instruction.textContent = question.instruction;
@@ -1297,4 +1293,3 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
   else if (page === "card") initCard();
   if (page === "home" || page === "room") initGuide();
 })();
->>>>>>> Stashed changes
