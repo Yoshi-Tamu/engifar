@@ -1,0 +1,443 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+/* ============================================================
+   ENGIFAR - ロケット製作ロード画面(独立ファイル)
+   loading.html / loading.css / loading.js には一切依存しない。
+   状態は rocketStage の data-state 属性で管理する:
+     repairing -> speedingUp -> smoke -> completed
+   ============================================================ */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --text: oklch(0.97 0.006 260);
+  --text-muted: oklch(0.74 0.02 262);
+  --border: oklch(0.36 0.05 268);
+  --cyan: oklch(0.76 0.12 202);
+  --cyan-bright: oklch(0.85 0.10 202);
+  --urgent: oklch(0.84 0.18 78);
+  --green-ready: oklch(0.78 0.19 148);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: linear-gradient(180deg, oklch(0.15 0.03 265) 0%, oklch(0.18 0.04 266) 55%, oklch(0.13 0.03 264) 100%);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------------- 全体レイアウト ---------------- */
+
+.rocket-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rocket-bg-stars {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.rocket-star { animation: rocketTwinkle 2.8s ease-in-out infinite; fill: oklch(0.9 0.01 260); }
+.rocket-star-accent { fill: oklch(0.78 0.12 202); }
+
+@keyframes rocketTwinkle { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.9; } }
+
+.rocket-stage {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 92vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4vw, 32px);
+  padding: clamp(20px, 5vw, 40px) 0;
+}
+
+.rocket-illustration {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------------- ロードテキスト ---------------- */
+
+.rocket-loading-text {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(15px, 3.6vw, 19px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--cyan-bright);
+  min-height: 1.6em;
+  transition: color 0.3s ease;
+}
+
+.rocket-loading-text.is-urgent { color: var(--urgent); }
+
+.rocket-loading-text.is-complete {
+  color: var(--green-ready);
+  font-size: clamp(20px, 5vw, 28px);
+  animation: rocketTextPopIn 0.55s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes rocketTextPopIn {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.wave-char {
+  display: inline-block;
+  animation: waveChar 3s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+/* 「もう少しで完成しそうです...」は少し速めの波で、切迫感を出す */
+.rocket-loading-text.is-urgent .wave-char {
+  animation-duration: 1.7s;
+}
+
+@keyframes waveChar {
+  0%, 10%, 100% { transform: translateY(0); opacity: 1; }
+  5%            { transform: translateY(-7px); opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-char { animation: none; }
+  .rocket-loading-text.is-complete { animation: none; }
+}
+
+/* ============================================================
+   ロケット本体: 製作中 ⇔ 完成 のクロスフェード
+   ============================================================ */
+
+.rocket-repair-details { transition: opacity 0.6s ease; }
+.rocket-polish-details { opacity: 0; transition: opacity 0.6s ease; }
+[data-state="completed"] .rocket-repair-details { opacity: 0; }
+[data-state="completed"] .rocket-polish-details { opacity: 1; }
+
+.rocket-shine-sweep {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: rocketShineSweep 3.2s ease-in-out infinite;
+}
+@keyframes rocketShineSweep {
+  0%, 100% { transform: translate(-6px, 4px) rotate(0deg); opacity: 0.5; }
+  50%      { transform: translate(10px, -6px) rotate(4deg); opacity: 0.85; }
+}
+
+/* ---------------- アバター・工具: 平常運転(製作中の基本速度) ---------------- */
+
+.bot-tool-wrench {
+  transform-box: fill-box;
+  transform-origin: 82% 18%;
+  animation: repairWrench 1.4s ease-in-out infinite;
+}
+.bot-tool-panel {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: repairPanelPulse 2.2s ease-in-out infinite;
+}
+.bot-tool-wire {
+  transform-box: fill-box;
+  transform-origin: 20% 20%;
+  animation: repairWireCheck 1.8s ease-in-out infinite;
+}
+.bot-spark {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: repairSparkBlink 0.9s ease-in-out infinite;
+}
+.repair-bob {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: repairBob 3.2s ease-in-out infinite;
+}
+.repair-bot-b.repair-bob { animation-delay: 0.5s; }
+.repair-bot-c.repair-bob { animation-delay: 1s; }
+.rocket-hatch-glow {
+  animation: repairHatchGlow 2.4s ease-in-out infinite;
+}
+
+@keyframes repairWrench {
+  0%, 100% { transform: rotate(-18deg); }
+  50%      { transform: rotate(22deg); }
+}
+@keyframes repairPanelPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+@keyframes repairWireCheck {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50%      { transform: rotate(-8deg) translateY(-2px); }
+}
+@keyframes repairSparkBlink {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 1; }
+}
+@keyframes repairBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes repairHatchGlow {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+.repair-hose {
+  stroke-dasharray: 6 6;
+  animation: repairHoseFlow 1.1s linear infinite;
+}
+@keyframes repairHoseFlow {
+  to { stroke-dashoffset: -24; }
+}
+
+.repair-steam-wisp {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: repairSteamRise 3s ease-in-out infinite;
+}
+@keyframes repairSteamRise {
+  0%   { transform: translateY(0); opacity: 0; }
+  30%  { opacity: 0.6; }
+  100% { transform: translateY(-18px); opacity: 0; }
+}
+
+/* ---------------- ステージ2: 突然の高速製作(speedingUp / smoke) ---------------- */
+
+/* 3体それぞれ、周期・方向・軌道の大きさをずらして「各自が勝手に
+   ロケットの周りを飛び回っている」ように見せる(全員同じ動きだと
+   機械的に見えるため)。C だけは足元が画面下端に近いので軌道を
+   --orbit で少し小さくして画面外に出ないようにしている。 */
+[data-state="speedingUp"] .repair-bot-a.repair-bob,
+[data-state="smoke"] .repair-bot-a.repair-bob {
+  animation: rocketBotZoom 0.62s ease-in-out infinite;
+}
+[data-state="speedingUp"] .repair-bot-b.repair-bob,
+[data-state="smoke"] .repair-bot-b.repair-bob {
+  animation: rocketBotZoom 0.54s ease-in-out infinite reverse;
+  animation-delay: 0.1s;
+}
+[data-state="speedingUp"] .repair-bot-c.repair-bob,
+[data-state="smoke"] .repair-bot-c.repair-bob {
+  animation: rocketBotZoom 0.7s ease-in-out infinite;
+  animation-delay: 0.22s;
+  --orbit: 0.6;
+}
+[data-state="speedingUp"] .bot-tool-wrench,
+[data-state="smoke"] .bot-tool-wrench {
+  animation: repairWrench 0.16s ease-in-out infinite;
+}
+[data-state="speedingUp"] .bot-tool-panel,
+[data-state="smoke"] .bot-tool-panel {
+  animation: repairPanelPulse 0.2s ease-in-out infinite;
+}
+[data-state="speedingUp"] .bot-tool-wire,
+[data-state="smoke"] .bot-tool-wire {
+  animation: repairWireCheck 0.18s ease-in-out infinite;
+}
+[data-state="speedingUp"] .bot-spark,
+[data-state="smoke"] .bot-spark {
+  animation: repairSparkBlink 0.22s ease-in-out infinite;
+}
+[data-state="speedingUp"] .repair-hose,
+[data-state="smoke"] .repair-hose {
+  animation: repairHoseFlow 0.35s linear infinite;
+}
+
+/* ロケットの周囲を飛び回るような大きな軌道。--orbit で振れ幅を
+   アバターごとに調整できる(既定値1)。 */
+@keyframes rocketBotZoom {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  12%  { transform: translate(calc(var(--orbit, 1) * 58px), calc(var(--orbit, 1) * -40px)) rotate(10deg); }
+  28%  { transform: translate(calc(var(--orbit, 1) * 88px), calc(var(--orbit, 1) * 8px)) rotate(-8deg); }
+  44%  { transform: translate(calc(var(--orbit, 1) * 48px), calc(var(--orbit, 1) * 58px)) rotate(12deg); }
+  60%  { transform: translate(calc(var(--orbit, 1) * -28px), calc(var(--orbit, 1) * 66px)) rotate(-10deg); }
+  76%  { transform: translate(calc(var(--orbit, 1) * -62px), calc(var(--orbit, 1) * 12px)) rotate(8deg); }
+  92%  { transform: translate(calc(var(--orbit, 1) * -26px), calc(var(--orbit, 1) * -36px)) rotate(-12deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* ---------------- 煙(speedingUp / smoke の間だけ見える) ---------------- */
+
+.smoke-layer {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+[data-state="speedingUp"] .smoke-layer { opacity: 0.7; }
+[data-state="smoke"] .smoke-layer { opacity: 1; }
+[data-state="completed"] .smoke-layer { opacity: 0; transition-duration: 0.7s; }
+
+.smoke-haze {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: smokeHazePulse 1.9s ease-in-out infinite;
+}
+@keyframes smokeHazePulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.04); }
+}
+
+.smoke-puff {
+  animation: smokePuffDrift 3.4s ease-in-out infinite;
+}
+@keyframes smokePuffDrift {
+  0%   { transform: translate(0, 0) scale(0.82); opacity: 0; }
+  18%  { opacity: 1; }
+  65%  { opacity: 0.92; }
+  100% { transform: translate(var(--dx, 10px), -52px) scale(1.35); opacity: 0; }
+}
+
+/* ---------------- 完成の輝き(completed の間だけ見える) ---------------- */
+
+.sparkle-layer {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+[data-state="completed"] .sparkle-layer { opacity: 1; }
+
+.sparkle-flash {
+  opacity: 0;
+}
+[data-state="completed"] .sparkle-flash {
+  animation: sparkleFlash 1s ease-out;
+  animation-fill-mode: forwards;
+}
+@keyframes sparkleFlash {
+  0%   { opacity: 0; transform: scale(0.55); }
+  35%  { opacity: 0.95; transform: scale(1.08); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+
+.sparkle-star {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: sparkleTwinkle 1.8s ease-in-out infinite;
+}
+@keyframes sparkleTwinkle {
+  0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.45; }
+  50%      { transform: scale(1.15) rotate(12deg); opacity: 1; }
+}
+
+.sparkle-particle {
+  animation: sparkleParticleFloat 2.6s ease-in infinite;
+}
+@keyframes sparkleParticleFloat {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.7); }
+  25%  { opacity: 1; transform: translate(3px, -10px) scale(1); }
+  100% { opacity: 0; transform: translate(8px, -30px) scale(1.2); }
+}
+
+/* ---------------- ステージ4: 完成 → アバターがジャンプして喜ぶ ---------------- */
+
+[data-state="completed"] .repair-bob {
+  animation: rocketBotJump 0.85s ease-in-out infinite;
+  animation-delay: var(--jump-delay, 0s);
+}
+@keyframes rocketBotJump {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35%      { transform: translateY(calc(var(--jump, 16px) * -1)) rotate(-4deg); }
+  55%      { transform: translateY(calc(var(--jump, 16px) * -1)) rotate(4deg); }
+  75%      { transform: translateY(0) rotate(0deg); }
+}
+
+/* 完成時は道具を振り回すのではなく、両手を挙げて喜んでいるように固定する */
+[data-state="completed"] .bot-tool-wrench,
+[data-state="completed"] .bot-tool-wire {
+  animation: none;
+  transform: rotate(-58deg);
+}
+[data-state="completed"] .bot-tool-panel {
+  animation: none;
+  transform: scale(1) translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rocket-shine-sweep,
+  .repair-bob,
+  .bot-tool-wrench,
+  .bot-tool-panel,
+  .bot-tool-wire,
+  .bot-spark,
+  .rocket-hatch-glow,
+  .repair-hose,
+  .repair-steam-wisp,
+  .smoke-puff,
+  .sparkle-star,
+  .sparkle-particle,
+  [data-state] .repair-bob,
+  [data-state] .bot-tool-wrench,
+  [data-state] .bot-tool-panel,
+  [data-state] .bot-tool-wire,
+  [data-state] .bot-spark,
+  [data-state] .repair-hose {
+    animation: none !important;
+  }
+  .repair-steam-wisp { opacity: 0 !important; }
+  [data-state="smoke"] .smoke-layer,
+  [data-state="speedingUp"] .smoke-layer { opacity: 0.6 !important; }
+  [data-state="completed"] .sparkle-star,
+  [data-state="completed"] .sparkle-particle { opacity: 0.8 !important; }
+}
+
+/* ---------------- 開発用: 再生ボタン ---------------- */
+
+.dev-controls {
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + var(--safe-b));
+  transform: translateX(-50%);
+  z-index: 5;
+}
+.dev-controls button {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: oklch(0.14 0.03 264 / 0.72);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.dev-controls button:hover { color: var(--text); background: oklch(0.18 0.04 266 / 0.9); }
+.dev-controls button:active { transform: translateY(1px); }
+
+/* ---------------- レスポンシブ ---------------- */
+
+@media (max-width: 480px) {
+  .rocket-stage { gap: clamp(14px, 4vw, 20px); }
+  .rocket-illustration { max-width: 100%; }
+  .rocket-loading-text { font-size: clamp(14px, 4.2vw, 17px); }
+  .rocket-loading-text.is-complete { font-size: clamp(18px, 6vw, 24px); }
+  .dev-controls button { font-size: 11px; padding: 6px 11px; }
+}
+
+@media (min-width: 900px) {
+  .rocket-stage { width: min(720px, 74vw); gap: 40px; }
+  .rocket-illustration { max-width: 620px; }
+  .rocket-loading-text { font-size: 20px; }
+}
+
+@media (min-height: 760px) and (min-width: 900px) {
+  .rocket-illustration { max-width: 660px; }
+}

@@ -1,11 +1,191 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="refresh" content="0;url=./quiz.html">
-  <title>EngiFar</title>
-  <script>location.replace("./quiz.html" + location.hash)</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ENGIFAR - 準備中</title>
+<link rel="stylesheet" href="loading.css">
 </head>
-<body><p>クイズ画面を準備しています…</p></body>
+<body>
+
+<div class="loading-page" id="loadingPage">
+
+  <!-- 共有グラデーション定義(ロケットの見た目を room.html と揃える) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="loadBodyGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="oklch(0.97 0.005 260)"/>
+        <stop offset="1" stop-color="oklch(0.82 0.015 260)"/>
+      </linearGradient>
+      <radialGradient id="loadWindowGrad" cx="0.35" cy="0.3" r="0.8">
+        <stop offset="0" stop-color="oklch(0.9 0.08 202)"/>
+        <stop offset="1" stop-color="oklch(0.55 0.14 205)"/>
+      </radialGradient>
+    </defs>
+  </svg>
+
+  <!-- 背景の星空 -->
+  <svg class="loading-bg-stars" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <circle class="loading-star" cx="120" cy="90" r="2" style="animation-delay:0s"/>
+    <circle class="loading-star" cx="260" cy="180" r="1.6" style="animation-delay:0.4s"/>
+    <circle class="loading-star" cx="1180" cy="120" r="2.2" style="animation-delay:0.8s"/>
+    <circle class="loading-star" cx="1320" cy="240" r="1.6" style="animation-delay:1.2s"/>
+    <circle class="loading-star loading-star-accent" cx="90" cy="340" r="2" style="animation-delay:0.6s"/>
+    <circle class="loading-star loading-star-accent" cx="1360" cy="420" r="2" style="animation-delay:1.6s"/>
+    <circle class="loading-star" cx="200" cy="500" r="1.8" style="animation-delay:0.2s"/>
+    <circle class="loading-star" cx="1250" cy="560" r="1.8" style="animation-delay:1.0s"/>
+    <circle class="loading-star" cx="60" cy="620" r="1.6" style="animation-delay:1.4s"/>
+    <circle class="loading-star" cx="1390" cy="150" r="1.4" style="animation-delay:1.8s"/>
+    <circle class="loading-star" cx="420" cy="760" r="1.4" style="animation-delay:2.0s"/>
+    <circle class="loading-star" cx="980" cy="70" r="1.8" style="animation-delay:0.9s"/>
+    <circle class="loading-star" cx="720" cy="820" r="1.6" style="animation-delay:1.3s"/>
+    <circle class="loading-star" cx="540" cy="40" r="1.4" style="animation-delay:0.7s"/>
+  </svg>
+
+  <main class="loading-stage">
+
+    <!-- ============================================================
+         唯一のシーン: 円卓を囲んで作戦会議をするアバターたち
+         全員が同じ大きさ・同じ円卓からの距離で描かれ、上下関係を
+         連想させる構図(中央に立つ/見下ろす/指示するなど)は使わない。
+         ============================================================ -->
+    <section class="scene scene-meeting is-active">
+      <svg class="scene-illustration" viewBox="0 0 640 540" role="img" aria-label="6人のロボットアバターが円卓を囲み、ロケット製作に向けて対等な立場で会議をしている様子">
+
+        <!-- 円卓の背後のやわらかいグロー -->
+        <ellipse class="meeting-table-glow" cx="320" cy="322" rx="230" ry="120" fill="oklch(0.6 0.12 202 / 0.16)"/>
+
+        <!-- 円卓(側面の厚み → 天板 → リムの光 → ホロ風の同心円) -->
+        <g class="meeting-table">
+          <ellipse cx="320" cy="330" rx="205" ry="88" fill="oklch(0.15 0.03 264)"/>
+          <ellipse cx="320" cy="316" rx="205" ry="88" fill="oklch(0.24 0.035 264)"/>
+          <ellipse cx="320" cy="316" rx="205" ry="88" fill="none" stroke="oklch(0.76 0.12 202)" stroke-width="2.5" opacity="0.5"/>
+          <ellipse cx="320" cy="316" rx="163" ry="68" fill="none" stroke="oklch(0.76 0.12 202)" stroke-width="1.2" opacity="0.16"/>
+          <ellipse cx="320" cy="316" rx="112" ry="46" fill="none" stroke="oklch(0.76 0.12 202)" stroke-width="1.2" opacity="0.14"/>
+        </g>
+
+        <!-- テーブルの上のもの: 設計図・タブレット・小さなロケット模型・工具 -->
+        <g class="meeting-props">
+
+          <!-- 設計図(ブループリント) -->
+          <g transform="translate(233,282) rotate(-7)">
+            <rect x="0" y="0" width="132" height="92" rx="8" fill="oklch(0.28 0.07 231)" stroke="oklch(0.55 0.1 210)" stroke-width="1.5"/>
+            <g stroke="oklch(0.8 0.09 202 / 0.85)" stroke-width="1.6" fill="none" stroke-linecap="round">
+              <path d="M32 66 L32 20 Q32 10 44 10 L60 10 Q72 10 72 22 L72 40"/>
+              <path d="M20 30 L32 30 M20 44 L32 44"/>
+              <circle cx="52" cy="24" r="6"/>
+            </g>
+            <line x1="14" y1="78" x2="118" y2="78" stroke="oklch(0.8 0.09 202 / 0.4)" stroke-width="1" stroke-dasharray="3 3"/>
+          </g>
+
+          <!-- タブレット -->
+          <g transform="translate(372,300) rotate(9)">
+            <rect x="0" y="0" width="62" height="44" rx="6" fill="oklch(0.20 0.03 264)" stroke="oklch(0.55 0.03 262)" stroke-width="1.6"/>
+            <rect class="meeting-tablet-screen-glow" x="6" y="6" width="50" height="32" rx="3" fill="oklch(0.22 0.05 210)"/>
+            <line x1="11" y1="16" x2="38" y2="16" stroke="oklch(0.78 0.12 202)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="11" y1="24" x2="30" y2="24" stroke="oklch(0.78 0.12 202)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="11" y1="32" x2="46" y2="32" stroke="oklch(0.72 0.19 42 / 0.85)" stroke-width="2" stroke-linecap="round"/>
+          </g>
+
+          <!-- 小さなロケット模型 -->
+          <g transform="translate(320,246)">
+            <ellipse cx="0" cy="88" rx="30" ry="7" fill="oklch(0.1 0.02 264)" opacity="0.35"/>
+            <g class="meeting-rocket-model">
+              <rect x="-18" y="10" width="36" height="70" rx="16" fill="url(#loadBodyGrad)"/>
+              <rect x="-18" y="46" width="36" height="4" fill="oklch(0.72 0.19 42)"/>
+              <circle cx="0" cy="30" r="10" fill="url(#loadWindowGrad)"/>
+              <path d="M-18 10 Q-18 -14 0 -16 Q18 -14 18 10 Z" fill="url(#loadBodyGrad)"/>
+              <path d="M-18 58 L-32 78 L-14 80 Z" fill="oklch(0.7 0.12 202)"/>
+              <path d="M18 58 L32 78 L14 80 Z" fill="oklch(0.7 0.12 202)"/>
+            </g>
+          </g>
+
+          <!-- 工具とパーツ -->
+          <g transform="translate(216,352) rotate(14)">
+            <rect x="0" y="4" width="9" height="26" rx="4" fill="oklch(0.62 0.20 24)"/>
+            <circle cx="4" cy="0" r="6.5" fill="none" stroke="oklch(0.62 0.20 24)" stroke-width="3.4"/>
+          </g>
+          <circle cx="246" cy="368" r="3.6" fill="oklch(0.6 0.02 260)" stroke="oklch(0.4 0.02 260)" stroke-width="1"/>
+          <circle cx="258" cy="374" r="2.8" fill="oklch(0.6 0.02 260)" stroke="oklch(0.4 0.02 260)" stroke-width="1"/>
+        </g>
+
+        <!-- 6人のアバター(loading.js が同じ関数から生成し、全員を等しく描く) -->
+        <g id="meetingBots" class="meeting-bots"></g>
+      </svg>
+
+      <!-- ロード中テキスト(JSが文字を1文字ずつ span に分割して波アニメーションを付ける) -->
+      <p class="loading-text" id="loadingText" aria-live="polite"></p>
+
+    </section>
+
+  </main>
+
+  <!-- 右下の小さなカウントダウン(3→2→1をポップに表示。会議シーンはそのまま裏で動き続ける) -->
+  <div class="loading-countdown-badge" id="loadingCountdownBadge" aria-hidden="true">
+    <span class="loading-countdown-figure" id="loadingCountdownFigure"></span>
+  </div>
+
+  <!-- カウントダウン終了後、全面に表示する開始メッセージ -->
+  <div class="loading-final-message" id="loadingFinalMessage" aria-live="assertive">
+    <p>テストを開始します</p>
+  </div>
+
+</div>
+
+<script src="loading.js"></script>
+<script>
+(function () {
+  "use strict";
+  var NEXT_PAGE = "./quiz.html";
+
+  var MEETING_ONLY_MS = 1700;  // 会議シーンだけを見せておく時間
+  var POP_MS = 700;            // 数字1つぶんのポップ演出にかける時間
+  var FINAL_MESSAGE_MS = 1100; // 「テストを開始します」を見せておく時間
+  var COUNT_STEPS = ["3", "2", "1"];
+
+  var badge = document.getElementById("loadingCountdownBadge");
+  var figure = document.getElementById("loadingCountdownFigure");
+  var finalMessage = document.getElementById("loadingFinalMessage");
+
+  function popNumber(text, onDone) {
+    figure.textContent = text;
+    figure.className = "loading-countdown-figure is-count-" + text;
+    // クラスを一度外して reflow させないとアニメーションが再生されない
+    void figure.offsetWidth;
+    figure.classList.add("is-popping");
+    window.setTimeout(onDone, POP_MS);
+  }
+
+  function runCountdown() {
+    badge.classList.add("is-visible");
+    var i = 0;
+    function next() {
+      if (i >= COUNT_STEPS.length) {
+        badge.classList.remove("is-visible");
+        window.setTimeout(showFinalMessage, 150);
+        return;
+      }
+      var n = COUNT_STEPS[i];
+      i += 1;
+      popNumber(n, next);
+    }
+    next();
+  }
+
+  function showFinalMessage() {
+    finalMessage.classList.add("is-visible");
+    window.setTimeout(goNext, FINAL_MESSAGE_MS);
+  }
+
+  function goNext() {
+    if (window.EngifarLoading && typeof window.EngifarLoading.hide === "function") {
+      window.EngifarLoading.hide();
+    }
+    window.location.href = NEXT_PAGE + window.location.hash;
+  }
+
+  window.setTimeout(runCountdown, MEETING_ONLY_MS);
+})();
+</script>
+</body>
 </html>

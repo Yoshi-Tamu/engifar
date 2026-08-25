@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+/* ============================================================
+   ENGIFAR - テスト開始前ロード画面
+   常に「円卓を囲んでのチーム会議」シーンのみを表示する。
+   複数シーンの切り替えは廃止し、1種類の画面に統一している。
+   色トークンは room.css と揃えているが、このファイルは完全に独立して
+   動作するので既存ファイルには一切依存しない。
+   ============================================================ */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --panel: oklch(0.21 0.045 267);
+  --border: oklch(0.36 0.05 268);
+  --text: oklch(0.97 0.006 260);
+  --text-muted: oklch(0.74 0.02 262);
+  --text-dim: oklch(0.58 0.02 260);
+  --cyan: oklch(0.76 0.12 202);
+  --cyan-bright: oklch(0.85 0.10 202);
+  --orange: oklch(0.72 0.19 42);
+  --amber-bright: oklch(0.72 0.17 55);
+  --green-ready: oklch(0.72 0.20 148);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: linear-gradient(180deg, oklch(0.15 0.03 265) 0%, oklch(0.18 0.04 266) 55%, oklch(0.13 0.03 264) 100%);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------------- 全体レイアウト ---------------- */
+
+.loading-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-bg-stars {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.loading-star { animation: loadingTwinkle 2.8s ease-in-out infinite; fill: oklch(0.9 0.01 260); }
+.loading-star-accent { fill: oklch(0.78 0.12 202); }
+
+@keyframes loadingTwinkle { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.9; } }
+
+.loading-stage {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 92vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4vw, 32px);
+  padding: clamp(20px, 5vw, 40px) 0;
+}
+
+/* ---------------- シーン ---------------- */
+
+.scene {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4vw, 32px);
+}
+.scene.is-active {
+  display: flex;
+  animation: loadingFadeIn 0.6s ease;
+}
+
+@keyframes loadingFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.scene-illustration {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene.is-active { animation: none; }
+}
+
+/* ---------------- ロードテキスト(波アニメーション) ---------------- */
+
+.loading-text {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(15px, 3.6vw, 19px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--cyan-bright);
+  min-height: 1.6em;
+}
+
+.wave-char {
+  display: inline-block;
+  animation: waveChar 3s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* 0〜約12%の間だけ上に跳ねて、残りは静止する = 3秒に1回だけ波が通過する */
+@keyframes waveChar {
+  0%, 10%, 100% { transform: translateY(0); opacity: 1; }
+  5%            { transform: translateY(-7px); opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-char { animation: none; }
+}
+
+/* ============================================================
+   円卓会議シーン
+   ============================================================ */
+
+.meeting-table-glow {
+  animation: meetingGlowPulse 5s ease-in-out infinite;
+}
+@keyframes meetingGlowPulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+.meeting-tablet-screen-glow {
+  animation: meetingTabletGlow 2.4s ease-in-out infinite;
+}
+@keyframes meetingTabletGlow {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1; }
+}
+
+.meeting-rocket-model {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: meetingRocketSway 4.6s ease-in-out infinite;
+}
+@keyframes meetingRocketSway {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(2deg); }
+}
+
+/* ---------------- アバター共通(全員同じ土台・同じ大きさの規則で描く) ---------------- */
+
+.meeting-bot {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: meetingBob 3.6s ease-in-out infinite;
+  animation-delay: var(--bob-delay, 0s);
+}
+
+/* うなずいているアバターだけ、上下の動きに小さな傾きを重ねる */
+.meeting-bot-nod {
+  animation-name: meetingNodBob;
+}
+
+@keyframes meetingBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes meetingNodBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35%      { transform: translateY(-2px) rotate(-6deg); }
+  65%      { transform: translateY(-3px) rotate(4deg); }
+}
+
+.meeting-point-glow {
+  animation: meetingSparkBlink 1.3s ease-in-out infinite;
+}
+@keyframes meetingSparkBlink {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}
+
+.meeting-notepad-wiggle {
+  transform-box: fill-box;
+  transform-origin: 85% 60%;
+  animation: meetingNotepadWiggle 1.1s ease-in-out infinite;
+}
+@keyframes meetingNotepadWiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(4deg); }
+}
+
+.speech-dot {
+  opacity: 0;
+  animation: meetingSpeechDot 2.6s ease-in-out infinite;
+}
+@keyframes meetingSpeechDot {
+  0%   { opacity: 0; transform: scale(0.6); }
+  10%  { opacity: 1; transform: scale(1); }
+  55%  { opacity: 1; transform: scale(1); }
+  70%  { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meeting-table-glow,
+  .meeting-tablet-screen-glow,
+  .meeting-rocket-model,
+  .meeting-bot,
+  .meeting-point-glow,
+  .meeting-notepad-wiggle,
+  .speech-dot {
+    animation: none !important;
+  }
+  .speech-dot { opacity: 0.9 !important; }
+}
+
+/* ---------------- 右下の小さなカウントダウン ----------------
+   会議シーンはそのまま裏で動き続け、右下にだけ 3→2→1 を
+   ポップに表示する。奥行きのある飛び出し演出ではなく、
+   「ポンと弾んで少し反動で揺れる」かわいい変化にする。 */
+
+.loading-countdown-badge {
+  position: absolute;
+  right: max(18px, var(--safe-r));
+  bottom: max(18px, var(--safe-b));
+  z-index: 5;
+  width: clamp(64px, 11vw, 92px);
+  height: clamp(64px, 11vw, 92px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(7, 15, 28, .8);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .38);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.loading-countdown-badge.is-visible { opacity: 1; }
+
+.loading-countdown-figure {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 900;
+  font-size: clamp(32px, 5.6vw, 48px);
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(4, 9, 18, .65), 0 0 14px currentColor;
+  opacity: 0;
+}
+.loading-countdown-figure.is-count-3 { color: var(--cyan-bright); }
+.loading-countdown-figure.is-count-2 { color: var(--green-ready); }
+.loading-countdown-figure.is-count-1 { color: var(--orange); }
+
+.loading-countdown-figure.is-popping {
+  animation: loadingCountdownPop 700ms cubic-bezier(.31, 1.6, .44, 1) forwards;
+}
+/* ポンと弾んで、少し反動で揺れ戻ってから止まる(慣性のあるポップ) */
+@keyframes loadingCountdownPop {
+  0%   { transform: scale(.3) rotate(-6deg); opacity: 0; }
+  40%  { transform: scale(1.2) rotate(3deg); opacity: 1; }
+  60%  { transform: scale(.9) rotate(-2deg); opacity: 1; }
+  78%  { transform: scale(1.06) rotate(1deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ---------------- 全面「テストを開始します」 ---------------- */
+
+.loading-final-message {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6vw;
+  background: radial-gradient(ellipse at 50% 40%, oklch(0.21 0.045 267) 0%, oklch(0.12 0.03 264) 78%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+.loading-final-message.is-visible { opacity: 1; }
+
+.loading-final-message p {
+  margin: 0;
+  text-align: center;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 900;
+  font-size: clamp(30px, 8.4vw, 66px);
+  line-height: 1.3;
+  color: var(--text);
+  letter-spacing: .02em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-shadow: 0 3px 0 rgba(4, 9, 18, .65), 0 0 40px oklch(0.72 0.19 42 / .55), 0 0 90px oklch(0.72 0.19 42 / .3);
+  opacity: 0;
+  transform: scale(.7);
+}
+.loading-final-message.is-visible p {
+  animation: loadingFinalPop 620ms cubic-bezier(.28, 1.5, .4, 1) forwards;
+}
+@keyframes loadingFinalPop {
+  0%   { transform: scale(.7); opacity: 0; }
+  55%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-countdown-figure.is-popping { animation: none; opacity: 1; transform: none; }
+  .loading-final-message.is-visible p { animation: none; opacity: 1; transform: none; }
+}
+
+/* ---------------- レスポンシブ ---------------- */
+
+@media (max-width: 480px) {
+  .loading-stage { gap: clamp(14px, 4vw, 20px); }
+  .scene-illustration { max-width: 100%; }
+  .loading-text { font-size: clamp(14px, 4.2vw, 17px); }
+  .loading-countdown-badge { width: 56px; height: 56px; border-radius: 14px; right: 12px; bottom: 12px; }
+  .loading-countdown-figure { font-size: 26px; }
+}
+
+@media (min-width: 900px) {
+  .loading-stage { width: min(760px, 74vw); gap: 40px; }
+  .scene-illustration { max-width: 660px; }
+  .loading-text { font-size: 20px; }
+}
+
+@media (min-height: 760px) and (min-width: 900px) {
+  .scene-illustration { max-width: 700px; }
+}

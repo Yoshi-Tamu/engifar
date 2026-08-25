@@ -1,0 +1,622 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+/* ============================================================
+   ENGIFAR - 集計結果(ランキング発表 → 表彰式 → 最終リザルト)
+   rocket-launch.css / room.css と同じデザイントークンを使用する
+   ============================================================ */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --panel: oklch(0.21 0.045 267);
+  --panel-2: oklch(0.20 0.04 266);
+  --border: oklch(0.36 0.05 268);
+  --border-soft: oklch(0.32 0.05 268);
+  --text: oklch(0.97 0.006 260);
+  --text-muted: oklch(0.74 0.02 262);
+  --text-dim: oklch(0.58 0.02 260);
+  --cyan: oklch(0.76 0.12 202);
+  --cyan-bright: oklch(0.85 0.10 202);
+  --orange: oklch(0.72 0.19 42);
+  --amber-bright: oklch(0.72 0.17 55);
+  --green-ready-deep: oklch(0.55 0.15 148);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: oklch(0.13 0.03 264);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+.rf-app { position: relative; width: 100%; min-height: 100vh; }
+
+/* ---------------- 画面切り替え ---------------- */
+.rf-screen {
+  display: none;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+.rf-screen.is-active { display: flex; }
+
+/* 共通の星空背景 */
+.rf-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 10% 20%, white, transparent 60%),
+    radial-gradient(1.4px 1.4px at 25% 65%, white, transparent 60%),
+    radial-gradient(1.8px 1.8px at 40% 15%, white, transparent 60%),
+    radial-gradient(1.4px 1.4px at 55% 80%, white, transparent 60%),
+    radial-gradient(2px 2px at 70% 35%, white, transparent 60%),
+    radial-gradient(1.5px 1.5px at 85% 60%, white, transparent 60%),
+    radial-gradient(1.6px 1.6px at 92% 20%, white, transparent 60%),
+    radial-gradient(1.3px 1.3px at 15% 85%, white, transparent 60%),
+    radial-gradient(1.7px 1.7px at 60% 10%, white, transparent 60%),
+    radial-gradient(1.4px 1.4px at 78% 90%, white, transparent 60%);
+  opacity: 0.4;
+  animation: rfStarsTwinkle 3.2s ease-in-out infinite;
+}
+@keyframes rfStarsTwinkle { 0%, 100% { opacity: 0.28; } 50% { opacity: 0.65; } }
+
+@keyframes rfGlowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+@keyframes rfFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   画面A: ランキング発表
+   ============================================================ */
+.rf-screen-ranking {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: clamp(20px, 5vh, 48px);
+  padding: 24px;
+  background: radial-gradient(ellipse 90% 70% at 50% 45%, oklch(0.22 0.06 264), oklch(0.08 0.02 264));
+}
+
+.rf-ranking-bg { position: absolute; inset: 0; z-index: 0; }
+.rf-ranking-burst {
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(
+    from 0deg,
+    oklch(0.3 0.05 264 / 0) 0deg, oklch(0.75 0.17 60 / 0.14) 6deg, oklch(0.3 0.05 264 / 0) 14deg,
+    oklch(0.3 0.05 264 / 0) 44deg, oklch(0.7 0.13 200 / 0.12) 50deg, oklch(0.3 0.05 264 / 0) 58deg,
+    oklch(0.3 0.05 264 / 0) 88deg, oklch(0.78 0.15 340 / 0.1) 94deg, oklch(0.3 0.05 264 / 0) 102deg
+  );
+  animation: rfBurstSpin 16s linear infinite;
+}
+@keyframes rfBurstSpin { to { transform: rotate(360deg); } }
+
+.rf-ranking-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 45%, oklch(0.92 0.15 90 / 0.4), transparent 62%);
+  opacity: 0;
+  pointer-events: none;
+}
+.rf-ranking-flash.is-flashing { animation: rfFlashPulse 0.6s ease-out; }
+@keyframes rfFlashPulse { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+.rf-ranking-caption {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-size: clamp(12px, 3vw, 15px);
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.rf-ranking-row {
+  position: relative;
+  z-index: 2;
+  width: min(1000px, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(10px, 3vw, 24px);
+}
+
+.rf-ranking-name,
+.rf-ranking-avatar,
+.rf-ranking-place {
+  opacity: 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.rf-ranking-name { text-align: left; }
+.rf-ranking-avatar { display: flex; justify-content: center; flex: 0 0 auto; }
+.rf-ranking-place { text-align: right; }
+
+.rf-ranking-name {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: clamp(24px, 6vw, 52px);
+  color: var(--text);
+  text-shadow: 0 0 18px oklch(0.85 0.1 202 / 0.5);
+  overflow-wrap: anywhere;
+}
+.rf-ranking-avatar .bot-svg { width: clamp(90px, 20vw, 170px); display: block; filter: drop-shadow(0 10px 20px oklch(0.05 0.02 264 / 0.5)); }
+.rf-ranking-place {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(56px, 15vw, 128px);
+  line-height: 1;
+  color: var(--text);
+}
+
+.rf-ranking-row.is-revealing .rf-ranking-name { animation: rfCutIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.15) both; }
+.rf-ranking-row.is-revealing .rf-ranking-avatar { animation: rfCutIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.15) 0.08s both; }
+.rf-ranking-row.is-revealing .rf-ranking-place { animation: rfCutIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.15) 0.16s both; }
+@keyframes rfCutIn {
+  0% { transform: translateX(-140%) scale(0.8); opacity: 0; }
+  65% { transform: translateX(4%) scale(1.04); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.rf-place-bronze .rf-ranking-place {
+  background: linear-gradient(90deg, oklch(0.6 0.12 55), oklch(0.74 0.17 48));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 4px 26px oklch(0.55 0.15 50 / 0.6);
+}
+.rf-place-silver .rf-ranking-place {
+  background: linear-gradient(90deg, oklch(0.8 0.015 260), oklch(0.96 0.005 250));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 4px 30px oklch(0.85 0.02 250 / 0.7);
+}
+.rf-place-gold .rf-ranking-place {
+  background: linear-gradient(90deg, oklch(0.82 0.17 90), oklch(0.74 0.19 55), oklch(0.85 0.16 90));
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 4px 42px oklch(0.85 0.18 80 / 0.85);
+  animation: rfGlowPulse 1s ease-in-out infinite, rfGoldSheen 2.4s linear infinite;
+}
+@keyframes rfGoldSheen { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+/* ============================================================
+   画面B: 表彰式
+   ============================================================ */
+.rf-screen-podium {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: clamp(16px, 4vh, 32px);
+  padding: clamp(24px, 5vw, 40px) 16px calc(90px + var(--safe-b));
+  background: radial-gradient(ellipse 90% 70% at 50% 30%, oklch(0.24 0.06 264), oklch(0.07 0.02 264));
+}
+
+.rf-podium-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.rf-spotlight {
+  position: absolute;
+  top: -10%;
+  width: 46%;
+  height: 120%;
+  background: linear-gradient(180deg, oklch(0.9 0.05 90 / 0.22), transparent 70%);
+  filter: blur(2px);
+  animation: rfSpotlightSway 5s ease-in-out infinite;
+}
+.rf-spotlight-1 { left: 8%; transform: skewX(-8deg); animation-delay: 0s; }
+.rf-spotlight-2 { right: 8%; transform: skewX(8deg); animation-delay: 1.2s; }
+@keyframes rfSpotlightSway { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+.rf-confetti { position: absolute; inset: 0; overflow: hidden; }
+.rf-confetti-piece {
+  position: absolute;
+  top: -8%;
+  border-radius: 2px;
+  animation-name: rfConfettiFall, var(--spin);
+  animation-timing-function: linear, linear;
+  animation-iteration-count: infinite, infinite;
+}
+@keyframes rfConfettiFall { 0% { top: -8%; } 100% { top: 108%; } }
+@keyframes rfConfettiSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes rfConfettiSpinReverse { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+
+.rf-podium-title {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(26px, 6vw, 40px);
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--cyan-bright), var(--amber-bright));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 30px oklch(0.76 0.12 202 / 0.4);
+}
+
+.rf-podium-stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(8px, 3vw, 24px);
+}
+
+.rf-podium-col {
+  flex: 1 1 0;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: rfFadeUp 0.5s ease both;
+}
+.rf-podium-col-2 { animation-delay: 0.05s; }
+.rf-podium-col-1 { animation-delay: 0.2s; }
+.rf-podium-col-3 { animation-delay: 0.05s; }
+
+.rf-podium-figure { position: relative; display: flex; justify-content: center; }
+.rf-podium-col-1 .rf-podium-avatar .bot-svg { width: clamp(84px, 18vw, 140px); }
+.rf-podium-col-2 .rf-podium-avatar .bot-svg,
+.rf-podium-col-3 .rf-podium-avatar .bot-svg { width: clamp(64px, 14vw, 104px); }
+.rf-podium-avatar .bot-svg { display: block; filter: drop-shadow(0 8px 16px oklch(0.05 0.02 264 / 0.55)); }
+
+.rf-podium-crown {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(46px, 10vw, 68px);
+  animation: rfCrownBob 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px oklch(0.85 0.16 93 / 0.8));
+}
+.rf-crown-svg { width: 100%; display: block; }
+@keyframes rfCrownBob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
+
+.rf-podium-name {
+  font-size: clamp(13px, 3vw, 16px);
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rf-podium-block {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.rf-podium-col-1 .rf-podium-block { height: 132px; background: linear-gradient(180deg, oklch(0.32 0.09 80), oklch(0.22 0.06 70)); border-color: oklch(0.6 0.12 80 / 0.6); }
+.rf-podium-col-2 .rf-podium-block { height: 92px; }
+.rf-podium-col-3 .rf-podium-block { height: 60px; }
+.rf-podium-place-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(22px, 5vw, 32px);
+  color: var(--text-muted);
+}
+.rf-podium-col-1 .rf-podium-place-num { color: oklch(0.92 0.14 90); text-shadow: 0 0 16px oklch(0.85 0.16 93 / 0.7); }
+
+.rf-next-btn {
+  position: absolute;
+  z-index: 3;
+  right: calc(16px + var(--safe-r));
+  bottom: calc(16px + var(--safe-b));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: none;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  color: white;
+  background: linear-gradient(135deg, var(--amber-bright), oklch(0.62 0.19 40));
+  box-shadow: 0 10px 24px oklch(0.55 0.15 50 / 0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.rf-next-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.rf-next-btn:active { transform: translateY(0); }
+
+/* ============================================================
+   画面C: 最終リザルト
+   ============================================================ */
+.rf-screen-final {
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+  background: linear-gradient(180deg, oklch(0.16 0.03 265) 0%, oklch(0.185 0.04 266) 55%, oklch(0.14 0.03 264) 100%);
+}
+
+.rf-final-layout {
+  width: 100%;
+  max-width: 1180px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(14px, 2.4vw, 24px);
+  margin: 0 auto;
+}
+
+.rf-final-left,
+.rf-final-right {
+  flex: 1 1 460px;
+  min-width: min(300px, 100%);
+  padding: clamp(16px, 3vw, 24px);
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px oklch(0.05 0.02 264 / 0.4);
+  animation: rfFadeUp 0.4s ease;
+}
+
+.rf-final-heading {
+  margin: 0 0 4px;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: clamp(16px, 3vw, 19px);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.rf-final-left-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rf-sort-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-soft);
+}
+.rf-sort-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rf-sort-btn.is-active { background: var(--cyan-bright); color: oklch(0.15 0.02 260); }
+.rf-sort-btn:not(.is-active):hover { color: var(--text); }
+
+.rf-roster-hint { margin: 8px 0 14px; font-size: 12px; color: var(--text-muted); }
+
+.rf-roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+.rf-roster-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px 10px;
+  border-radius: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.rf-roster-card:hover { transform: translateY(-3px); background: oklch(0.24 0.05 267); border-color: var(--cyan-bright); }
+.rf-roster-card:active { transform: translateY(-1px); }
+.rf-roster-avatar { display: block; }
+.rf-roster-avatar .bot-svg { width: 56px; display: block; }
+.rf-roster-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rf-roster-score {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--cyan-bright);
+}
+.rf-roster-score small { font-family: 'M PLUS Rounded 1c', sans-serif; font-size: 10px; font-weight: 700; color: var(--text-muted); margin-left: 1px; }
+
+.rf-team-radar { display: flex; justify-content: center; margin-top: 6px; }
+.rf-team-radar-svg { width: 100%; max-width: 300px; }
+
+.rf-radar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: 6px;
+}
+.rf-radar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.rf-radar-legend-item i { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
+.rf-radar-legend-avg i { background: var(--cyan-bright); }
+
+.rf-matching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-soft);
+}
+.rf-matching-label { font-size: 12.5px; font-weight: 800; letter-spacing: 1px; color: var(--text-muted); }
+.rf-matching-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(34px, 7vw, 48px);
+  font-weight: 900;
+  background: linear-gradient(90deg, var(--cyan-bright), var(--amber-bright));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 24px oklch(0.76 0.12 202 / 0.4);
+}
+
+/* ============================================================
+   プロフィールモーダル(room.css の profile-card 意匠を踏襲)
+   ============================================================ */
+.rf-profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: oklch(0.05 0.02 264 / 0.6);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.rf-profile-overlay.is-visible { opacity: 1; }
+.rf-profile-modal[hidden] { display: none; }
+.rf-profile-modal {
+  position: fixed;
+  z-index: 61;
+  left: 50%;
+  top: 50%;
+  width: min(460px, calc(100vw - 32px));
+  transform: translate(-50%, -46%) scale(0.94);
+  opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.22, 0.9, 0.32, 1), opacity 0.22s ease;
+  border-radius: 22px;
+  background: oklch(0.185 0.04 266);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px oklch(0.05 0.02 264 / 0.6);
+  padding: 20px;
+}
+.rf-profile-modal.is-open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+.rf-profile-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  background: var(--panel-2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.rf-profile-close:hover { color: var(--text); background: var(--panel); }
+
+/* ---- room.css の .profile-card 系を複製(このページは room.css を
+   読み込まないため import ではなく手動コピー。room.css 側の見た目を
+   変更した場合はここも合わせて更新すること) ---- */
+.profile-card {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(10px, 3vw, 20px);
+  padding: 16px clamp(12px, 3vw, 18px);
+  border-radius: 18px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-soft);
+  animation: rfFadeUp 0.2s ease;
+}
+.rf-profile-card { flex-direction: column; }
+.profile-col { flex: 1 1 50%; min-width: 0; }
+.rf-profile-card .profile-col { flex: 1 1 auto; }
+.profile-col-left { display: flex; flex-direction: column; gap: 8px; }
+.profile-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.profile-icon {
+  width: 28px; height: 28px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+  box-shadow: 0 3px 8px oklch(0.1 0.02 264 / 0.3);
+}
+.profile-name { font-size: 13.5px; font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.profile-score-badge {
+  font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;
+  background: var(--cyan-bright); color: oklch(0.15 0.02 260); flex-shrink: 0;
+}
+.profile-role-tag {
+  align-self: flex-start; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 3px 12px; border-radius: 999px;
+  background: oklch(0.32 0.09 42 / 0.4); color: var(--amber-bright);
+  border: 1px solid oklch(0.5 0.1 42 / 0.4);
+}
+.profile-role-tag.profile-role-tag-empty { background: oklch(0.3 0.03 262); color: var(--text-dim); border-color: var(--border-soft); }
+
+.profile-bot-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  min-height: 92px; border: none; background: none; padding: 4px; margin: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.profile-bot-btn .bot-svg { width: min(68%, 132px); transform-origin: 50% 50%; }
+.profile-bot-btn:hover .bot-svg { filter: brightness(1.08); }
+@keyframes botSpinOnce { to { transform: rotate(360deg); } }
+.profile-bot-btn.is-spinning .bot-svg { animation: botSpinOnce 0.6s ease-in-out; }
+@keyframes botBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.15); }
+}
+.profile-bot-btn .bot-eye {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: botBlink 4.4s ease-in-out infinite;
+}
+
+.profile-col-right { display: flex; align-items: center; justify-content: center; }
+.radar-chart { width: 100%; max-width: 300px; height: auto; }
+.radar-label { font-size: 10.5px; font-weight: 800; fill: var(--text-muted); font-family: 'M PLUS Rounded 1c', sans-serif; }
+.radar-label-dim { fill: var(--text-dim); opacity: 0.7; }
+.radar-label-pct { font-size: 9.5px; font-weight: 700; fill: var(--cyan-bright); }
+
+/* ---------------- レスポンシブ ---------------- */
+@media (max-width: 480px) {
+  .rf-ranking-row { gap: 6px; }
+  .rf-podium-stage { gap: 6px; }
+  .rf-next-btn { padding: 10px 16px; font-size: 12.5px; right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b)); }
+}
+
+@media (min-width: 900px) {
+  .rf-roster { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+}
+
+/* ---------------- アクセシビリティ ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .rf-stars, .rf-ranking-burst, .rf-spotlight, .rf-confetti-piece,
+  .rf-place-gold .rf-ranking-place, .rf-podium-crown,
+  .rf-ranking-row.is-revealing .rf-ranking-name,
+  .rf-ranking-row.is-revealing .rf-ranking-avatar,
+  .rf-ranking-row.is-revealing .rf-ranking-place,
+  .rf-ranking-flash.is-flashing,
+  .rf-podium-col, .rf-final-left, .rf-final-right, .profile-card,
+  .profile-bot-btn.is-spinning .bot-svg, .profile-bot-btn .bot-eye {
+    animation: none !important;
+  }
+}

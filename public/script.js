@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-const message = await fetch("/welcome-message")
-document.querySelector("#welcomeMessage").innerText = await message.text()
-=======
 (() => {
   "use strict";
 
@@ -299,6 +295,61 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
     return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
   }
 
+  /* ----------------------------------------------------------------
+     チーム集計画面(result-final.html)向けのローカル・リーダーボード。
+     result-final.js が消費する window.RESULT_DATA は
+     result-final-data.js が localStorage(LEADERBOARD_KEY)から読み込む。
+     ここでは、実際のプレイ結果を1件ずつそのストレージへ追記する。
+     ---------------------------------------------------------------- */
+  const LEADERBOARD_KEY = "engifar-leaderboard-v1";
+
+  // result-final.js の TEAM 要素(testResult)が使う英語キーへの変換表。
+  const CATEGORY_KEY_MAP = {
+    "フロントエンド": "Front",
+    "バックエンド": "Back",
+    "データベース": "DB",
+    "インフラ": "INFRA",
+    "API": "API",
+    "セキュリティ": "SEC"
+  };
+
+  function mapCategoryScoresToTestResult(categoryScores) {
+    const source = categoryScores && typeof categoryScores === "object" ? categoryScores : {};
+    const testResult = {};
+    Object.entries(CATEGORY_KEY_MAP).forEach(([japaneseKey, englishKey]) => {
+      testResult[englishKey] = Math.round(clamp(safeNumber(source[japaneseKey]), 0, 100));
+    });
+    return testResult;
+  }
+
+  function readLeaderboard() {
+    try {
+      const raw = window.localStorage.getItem(LEADERBOARD_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function appendLeaderboardEntry(runState) {
+    try {
+      const leaderboard = readLeaderboard();
+      const lightness = rgbToHsl(hexToRgb(runState.player.color)).l;
+      const entry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: runState.player.name,
+        iconColor: { value: runState.player.color, light: lightness > 68 },
+        testResult: mapCategoryScoresToTestResult(runState.metrics && runState.metrics.categoryScores)
+      };
+      leaderboard.push(entry);
+      window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+    } catch {
+      // localStorage が使えない環境(プライベートモード等)では静かに諦める。
+      // persist() の sessionStorage 保存と同じ方針。
+    }
+  }
+
   function initHome() {
     const nameInput = document.querySelector("#player-name");
     const colorInput = document.querySelector("#player-color");
@@ -405,18 +456,36 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
 
   function initRoom() {
     if (!requirePlayer()) return;
-    const colorTargets = [document.querySelector("#room-player-avatar"), document.querySelector("#room-list-avatar")];
+    const colorTargets = [document.querySelector("#room-list-avatar")];
     colorTargets.forEach((target) => target && target.style.setProperty("--crew-color", state.player.color));
     document.querySelector("#room-player-name").textContent = state.player.name;
     document.querySelector("#room-code-value").textContent = state.room.code;
     setStateLink(document.querySelector("#room-home-link"), "./index.html", state);
+    if (window.EngifarRoomAvatars) {
+      try {
+        window.EngifarRoomAvatars.init({
+          containerSelector: "#roomAvatarField",
+          participants: [
+            { id: "crew-1", name: "クルーA", color: "#ff665f", isYou: false },
+            { id: "crew-2", name: "クルーB", color: "#5ca9ff", isYou: false },
+            { id: "crew-3", name: "クルーC", color: "#f5cf4b", isYou: false },
+            { id: "crew-4", name: "クルーD", color: "#54d37c", isYou: false },
+            { id: "you", name: state.player.name, color: state.player.color, isYou: true }
+          ]
+        });
+      } catch (err) {
+        // Never let a broken avatar layer take the start button and guide
+        // modal down with it - those are wired up below/after this call.
+        console.error("EngifarRoomAvatars.init failed", err);
+      }
+    }
     document.querySelector("#room-start-button").addEventListener("click", () => {
       const next = createDefaultState();
       next.playerConfigured = true;
       next.player = { ...state.player };
       next.room = { ...state.room };
       next.status = "quiz";
-      goTo("./quiz.html", next);
+      goTo("./loading.html", next);
     });
   }
 
@@ -617,7 +686,7 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
       state.metrics = computeMetrics(state.quiz.records);
       state.outcome = null;
       state.status = "rocket";
-      goTo("./rocket.html", state);
+      goTo("./rocket-loading.html", state);
     }
 
     function showReview(question, token) {
@@ -837,7 +906,10 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
       await boardBots(); await bounceRocket(); await igniteRocket(); await liftoffRocket(); await flyThrough(); showResult(); running = false;
     }
     elements.launchButton.addEventListener("click", runLaunchSequence);
-    elements.resultButton.addEventListener("click", () => goTo("./result.html", state));
+    elements.resultButton.addEventListener("click", () => {
+      appendLeaderboardEntry(state);
+      goTo("./result-final.html", state);
+    });
   }
 
   function resultCopy(outcome, metrics) {
@@ -1297,4 +1369,3 @@ document.querySelector("#welcomeMessage").innerText = await message.text()
   else if (page === "card") initCard();
   if (page === "home" || page === "room") initGuide();
 })();
->>>>>>> Stashed changes

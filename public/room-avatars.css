@@ -1,0 +1,176 @@
+/* ============================================================
+   ENGIFAR - room.html interactive crew avatars
+   Scope: everything here lives under fresh `.room-avatar*` class
+   names. It intentionally does NOT touch or reuse `.crew-avatar`,
+   `.crew-avatar-svg` or the `crew-bob` keyframes from style.css -
+   those stay exactly as they are for index.html, quiz.html, the result
+   screens, and card.html, and for room.html's own `#room-list-avatar`
+   lobby-card avatar.
+   This file only styles the draggable crew standing around the
+   rocket in `.room-stage`.
+   ============================================================ */
+
+.room-avatar-field {
+  position: absolute;
+  inset: 0;
+  z-index: 6; /* matches the old .room-bot stacking */
+  pointer-events: none; /* empty space never blocks clicks; avatars opt back in below */
+}
+
+.room-avatar {
+  --crew-size: 54px; /* same default size as the old .room-bot on desktop */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--crew-size) * .68);
+  height: var(--crew-size);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  touch-action: none; /* JS also calls preventDefault(); this is the CSS-side backstop */
+  cursor: grab;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .28)) drop-shadow(0 0 10px var(--crew-color, #54d37c));
+}
+
+.room-avatar.is-dragging,
+.room-avatar:active {
+  cursor: grabbing;
+}
+
+/* Toggled by JS only while a nudged (not actively-dragged) avatar is being
+   pushed apart by collision resolution, so the drop reads as a soft bounce
+   while the actively-dragged avatar keeps instant 1:1 tracking. */
+.room-avatar--settle {
+  transition: left .18s ease, top .18s ease;
+}
+
+.room-avatar-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+}
+
+/* Exactly one of these is active on `.room-avatar-inner` at a time - JS swaps
+   the modifier class rather than layering animations, so idle bob, blink,
+   jump, tap reactions and drag/panic shiver never fight each other. */
+.room-avatar-inner--bob { animation: room-avatar-bob 3.4s ease-in-out infinite; }
+.room-avatar-inner--jump { animation: room-avatar-jump .4s ease-out 1; }
+.room-avatar-inner--spin { animation: room-avatar-spin .52s cubic-bezier(.3, .1, .2, 1) 1; }
+.room-avatar-inner--sway { animation: room-avatar-sway .52s ease-in-out 1; }
+.room-avatar-inner--hop { animation: room-avatar-hop .37s ease-out 1; }
+.room-avatar-inner--bounce { animation: room-avatar-bounce .47s ease-in-out 1; }
+.room-avatar-inner--shiver { animation: room-avatar-shiver .14s linear infinite; }
+
+.room-avatar-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* transform-box:fill-box makes a scale on an SVG shape pivot around its own
+   center instead of the SVG viewport's origin. */
+.room-avatar-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.room-avatar-eye.is-blinking {
+  animation: room-avatar-blink .26s ease-in-out 1;
+}
+
+.room-avatar-sweat {
+  position: absolute;
+  top: 4%;
+  right: 4%;
+  width: 20%;
+  aspect-ratio: .75;
+  border-radius: 0 65% 65% 65%;
+  background: linear-gradient(180deg, #cdeeff, #62c7ec 75%);
+  box-shadow: 0 0 6px rgba(98, 199, 236, .75);
+  transform: rotate(40deg);
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.room-avatar.is-dragging .room-avatar-sweat {
+  opacity: 1;
+}
+
+.room-avatar-tag {
+  position: absolute;
+  left: 50%;
+  top: 105%;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #07111f;
+  background: var(--lime);
+  font-size: 7px;
+  font-weight: 900;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.room-avatar--enter { animation: room-avatar-pop-in .35s cubic-bezier(.3, 1.5, .5, 1) both; }
+.room-avatar--exit { animation: room-avatar-pop-out .25s ease-in both; }
+
+@keyframes room-avatar-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes room-avatar-jump {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-14px); }
+  60% { transform: translateY(2px); }
+}
+@keyframes room-avatar-blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(.12); }
+}
+@keyframes room-avatar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes room-avatar-sway {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-16deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-7deg); }
+  80% { transform: rotate(4deg); }
+}
+@keyframes room-avatar-hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  70% { transform: translateY(2px); }
+}
+@keyframes room-avatar-bounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-9px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-5px); }
+}
+@keyframes room-avatar-shiver {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(1.5px, -1px) rotate(-3deg); }
+  50% { transform: translate(-1.5px, 1px) rotate(3deg); }
+  75% { transform: translate(1px, 1.5px) rotate(-2deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+@keyframes room-avatar-pop-in {
+  0% { transform: translate(-50%, -50%) scale(.2); opacity: 0; }
+  70% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes room-avatar-pop-out {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(.15); opacity: 0; }
+}
+
+@media (max-width: 760px) {
+  .room-avatar { --crew-size: 35px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-avatar-inner--bob,
+  .room-avatar-inner--shiver {
+    animation: none;
+  }
+}

@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#07111f">
   <title>EngiFar | ルーム</title>
   <link rel="stylesheet" href="./style.css?v=20260824-rank">
+  <link rel="stylesheet" href="./room-avatars.css?v=20260824-rank">
+  <script src="./room-avatars.js?v=20260824-rank" defer></script>
   <script src="./script.js?v=20260824-rank" defer></script>
 </head>
 <body>
@@ -16,9 +18,9 @@
       <section class="room-stage" aria-label="ロケットのまわりに集まったメンバー">
         <span class="room-ring room-ring--outer" aria-hidden="true"></span><span class="room-ring room-ring--inner" aria-hidden="true"></span>
         <div class="home-rocket room-rocket" aria-hidden="true"><span class="home-rocket-tip"></span><span class="home-rocket-window"></span><span class="home-rocket-band home-rocket-band--orange"></span><span class="home-rocket-band home-rocket-band--cyan"></span><span class="home-rocket-fin home-rocket-fin--left"></span><span class="home-rocket-fin home-rocket-fin--right"></span><span class="home-rocket-engine"></span><span class="home-rocket-flame"></span></div>
-        <span class="crew-avatar room-bot room-bot--one" style="--crew-color:#ff665f"><i></i></span><span class="crew-avatar room-bot room-bot--two" style="--crew-color:#5ca9ff"><i></i></span><span class="crew-avatar room-bot room-bot--three" style="--crew-color:#f5cf4b"><i></i></span><span class="crew-avatar room-bot room-bot--four" style="--crew-color:#54d37c"><i></i></span><span class="crew-avatar room-bot room-bot--player" id="room-player-avatar" style="--crew-color:#b889ff"><i></i><b>YOU</b></span>
+        <div class="room-avatar-field" id="roomAvatarField" aria-label="仲間のクルー"></div>
       </section>
-      <section class="room-lobby-panel"><p class="eyebrow">CREW LOBBY</p><h1>出発する仲間が集合中！</h1><div class="room-player-card"><span class="crew-avatar crew-avatar--small" id="room-list-avatar" style="--crew-color:#54d37c"><i></i></span><div><small>READY CREW</small><strong id="room-player-name">CREW MEMBER</strong></div><span class="ready-badge">準備OK</span></div><p class="room-future-note">招待コードで仲間が参加できるマルチプレイへ拡張できるルーム構成です。</p><button class="primary-button" id="room-start-button" type="button"><span>クイズを始める</span><b aria-hidden="true">→</b></button></section>
+      <section class="room-lobby-panel"><p class="eyebrow">CREW LOBBY</p><h1>出発する仲間が集合中！</h1><div class="room-player-card"><span class="crew-avatar crew-avatar--small" id="room-list-avatar" style="--crew-color:#54d37c"><svg class="crew-avatar-svg" viewBox="0 0 100 130" role="img" aria-hidden="true" focusable="false"><ellipse cx="50" cy="118" rx="24" ry="7" fill="var(--crew-color, #54d37c)" opacity="0.3"></ellipse><line x1="50" y1="10" x2="50" y2="24" stroke="var(--crew-color, #54d37c)" stroke-width="4" stroke-linecap="round"></line><circle cx="50" cy="8" r="6" fill="#62e4ec"></circle><rect x="20" y="22" width="60" height="76" rx="30" fill="var(--crew-color, #54d37c)" stroke="rgba(255,255,255,.18)" stroke-width="2"></rect><rect x="32" y="42" width="36" height="26" rx="12" fill="#f0f7f5"></rect><circle cx="43" cy="55" r="4" fill="#122232"></circle><circle cx="57" cy="55" r="4" fill="#122232"></circle></svg></span><div><small>READY CREW</small><strong id="room-player-name">CREW MEMBER</strong></div><span class="ready-badge">準備OK</span></div><p class="room-future-note">招待コードで仲間が参加できるマルチプレイへ拡張できるルーム構成です。</p><button class="primary-button" id="room-start-button" type="button"><span>クイズを始める</span><b aria-hidden="true">→</b></button></section>
     </main>
   </div>
 </body>
