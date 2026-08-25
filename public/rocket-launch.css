@@ -1,0 +1,574 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+/* ============================================================
+   ENGIFAR - ロケット発射・飛行距離・到達ランク演出
+   ============================================================ */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --panel: oklch(0.21 0.045 267);
+  --panel-2: oklch(0.19 0.04 266);
+  --border: oklch(0.36 0.05 268);
+  --text: oklch(0.97 0.006 260);
+  --text-muted: oklch(0.74 0.02 262);
+  --text-dim: oklch(0.58 0.02 260);
+  --cyan: oklch(0.76 0.12 202);
+  --cyan-bright: oklch(0.85 0.10 202);
+  --orange: oklch(0.72 0.19 42);
+  --amber-bright: oklch(0.72 0.17 55);
+  --green-ready: oklch(0.72 0.20 148);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: oklch(0.13 0.03 264);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+.rl-app { position: relative; width: 100%; min-height: 100vh; }
+
+/* ---------------- 画面切り替え ---------------- */
+
+.rl-screen {
+  display: none;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+.rl-screen.is-active { display: flex; }
+
+/* ============================================================
+   画面1: 能力値設定
+   ============================================================ */
+
+.rl-screen-setup {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(ellipse 80% 60% at 50% 20%, oklch(0.24 0.05 267 / 0.6), transparent 70%), linear-gradient(180deg, oklch(0.15 0.03 265), oklch(0.13 0.03 264));
+}
+
+.rl-setup-card {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(24px, 5vw, 36px) clamp(20px, 5vw, 30px);
+  border-radius: 26px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px oklch(0.05 0.02 264 / 0.5);
+  text-align: center;
+  animation: rlFadeUp 0.4s ease;
+}
+
+.rl-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rl-setup-title { margin: 0; font-size: clamp(19px, 5vw, 23px); font-weight: 800; }
+.rl-setup-hint { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.rl-stat-block { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.rl-stat-value-row { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.rl-stat-btn {
+  width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--panel-2); color: var(--text); font-size: 20px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.rl-stat-btn:hover { background: oklch(0.24 0.05 267); }
+.rl-stat-btn:active { transform: scale(0.92); }
+
+.rl-stat-readout { min-width: 96px; }
+.rl-stat-number {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(38px, 10vw, 48px);
+  font-weight: 800;
+  color: var(--cyan-bright);
+  line-height: 1;
+}
+
+.rl-stat-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  appearance: none;
+  background: linear-gradient(90deg, oklch(0.55 0.1 250), oklch(0.7 0.18 42) 45%, oklch(0.75 0.2 25) 75%, oklch(0.8 0.2 340));
+  outline: none;
+  cursor: pointer;
+}
+.rl-stat-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--text);
+  border: 4px solid var(--cyan-bright);
+  box-shadow: 0 2px 8px oklch(0.1 0.02 264 / 0.5);
+  cursor: pointer;
+}
+.rl-stat-slider::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--text);
+  border: 4px solid var(--cyan-bright);
+  cursor: pointer;
+}
+.rl-stat-scale { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-weight: 700; }
+
+.rl-rank-preview {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.rl-rank-preview-label { font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--text-dim); }
+.rl-rank-preview-rank { font-size: clamp(16px, 4vw, 19px); font-weight: 800; color: var(--amber-bright); transition: color 0.2s ease; }
+.rl-rank-preview-dest { font-size: 12px; color: var(--text-muted); }
+
+.rl-launch-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 58px;
+  margin-top: 6px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  border: none;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 800;
+  font-size: clamp(16px, 4vw, 18px);
+  color: white;
+  background: linear-gradient(135deg, var(--amber-bright), oklch(0.62 0.19 40));
+  box-shadow: 0 12px 28px oklch(0.55 0.15 50 / 0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.rl-launch-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.rl-launch-btn:active { transform: translateY(0); }
+
+@keyframes rlFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   画面2: 発射シーケンス
+   ============================================================ */
+
+.rl-screen-launch {
+  overflow: hidden;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.rl-sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.rl-sky-layer {
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.rl-sky-layer.is-visible { opacity: 1; }
+
+.rl-sky-ground { background: linear-gradient(180deg, oklch(0.62 0.1 230) 0%, oklch(0.78 0.08 210) 55%, oklch(0.7 0.12 150) 100%); }
+.rl-sky-upper { background: linear-gradient(180deg, oklch(0.42 0.1 250) 0%, oklch(0.6 0.12 220) 100%); }
+.rl-sky-edge { background: linear-gradient(180deg, oklch(0.18 0.05 265) 0%, oklch(0.4 0.1 235) 55%, oklch(0.62 0.1 210) 100%); }
+.rl-sky-space { background: oklch(0.08 0.02 264); }
+.rl-sky-sea { background: linear-gradient(180deg, oklch(0.35 0.08 235) 0%, oklch(0.22 0.06 240) 60%, oklch(0.16 0.05 245) 100%); }
+
+.rl-stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 20%, white, transparent),
+    radial-gradient(1.4px 1.4px at 30% 60%, white, transparent),
+    radial-gradient(2px 2px at 55% 15%, white, transparent),
+    radial-gradient(1.6px 1.6px at 70% 45%, white, transparent),
+    radial-gradient(1.4px 1.4px at 85% 70%, white, transparent),
+    radial-gradient(1.8px 1.8px at 20% 85%, white, transparent),
+    radial-gradient(1.4px 1.4px at 92% 25%, white, transparent);
+  opacity: 0.85;
+  animation: rlStarsTwinkle 3s ease-in-out infinite;
+}
+@keyframes rlStarsTwinkle { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.95; } }
+
+.rl-approach-body {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: var(--approach-color, oklch(0.7 0.05 250));
+  box-shadow: 0 0 40px var(--approach-color, oklch(0.7 0.05 250));
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  transition: transform 1.1s cubic-bezier(0.22, 0.8, 0.32, 1), opacity 0.6s ease;
+}
+.rl-approach-body.is-visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+.rl-ground-line {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 8vh;
+  background: oklch(0.28 0.06 150);
+  z-index: 1;
+  transition: opacity 0.5s ease, transform 0.6s ease;
+}
+.rl-ground-line.is-hidden { opacity: 0; transform: translateY(30px); }
+
+.rl-launch-stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.rl-bots-runway {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.rl-runway-bot {
+  position: absolute;
+  width: clamp(30px, 7vw, 48px);
+  transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1), top 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, transform 0.25s ease;
+}
+.rl-runway-bot.is-boarding { transform: scale(0.35); opacity: 0; }
+.rl-runway-bot .bot-svg { display: block; width: 100%; height: auto; }
+
+.rl-rocket-wrap {
+  position: relative;
+  transform: translateY(0) scale(1);
+  transition: transform 0.5s ease;
+}
+.rl-rocket-svg {
+  display: block;
+  width: clamp(120px, 22vw, 220px);
+  height: auto;
+  overflow: visible;
+}
+.rl-flame { transform-box: fill-box; transform-origin: 50% 0%; opacity: 0; transition: opacity 0.3s ease; }
+.rl-rocket-hatch { opacity: 0; transition: opacity 0.2s ease; }
+.rl-rocket-hatch.is-open { opacity: 1; }
+
+.rl-rocket-smoke {
+  position: absolute;
+  left: 50%;
+  bottom: -6%;
+  width: 140%;
+  height: 26%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 100% at 50% 100%, oklch(0.85 0.01 260 / 0.55), transparent 75%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- ロケットの状態別アニメーション --- */
+.rl-rocket-wrap.is-bouncing { animation: rlBounce 0.7s cubic-bezier(0.34, 1.2, 0.4, 1); }
+@keyframes rlBounce {
+  0%   { transform: translateY(0) scale(1, 1); }
+  20%  { transform: translateY(2px) scale(1.08, 0.86); }
+  45%  { transform: translateY(16px) scale(1.05, 0.9); }
+  70%  { transform: translateY(-14px) scale(0.97, 1.05); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+.rl-rocket-wrap.is-igniting .rl-flame { opacity: 1; }
+.rl-rocket-wrap.is-igniting .rl-rocket-smoke { opacity: 1; }
+.rl-rocket-wrap.is-igniting { animation: rlIgniteShake 0.14s linear infinite; }
+@keyframes rlIgniteShake {
+  0%, 100% { margin-left: 0; }
+  25% { margin-left: -3px; }
+  75% { margin-left: 3px; }
+}
+
+.rl-rocket-wrap.is-flying {
+  animation: rlLiftoff 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes rlLiftoff {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-60vh) scale(0.7); }
+}
+.rl-rocket-wrap.is-cruising { transform: translateY(-14vh) scale(0.62); }
+.rl-rocket-wrap.is-cruising .rl-flame { opacity: 1; }
+
+.rl-rocket-wrap.is-tumbling {
+  animation: rlTumble 1.4s ease-in forwards;
+}
+@keyframes rlTumble {
+  0%   { transform: translateY(-14vh) scale(0.62) rotate(0deg); }
+  100% { transform: translateY(30vh) scale(0.8) rotate(70deg); }
+}
+.rl-rocket-wrap.is-tumbling .rl-flame { opacity: 0; }
+
+.rl-countdown {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(48px, 14vw, 80px);
+  font-weight: 900;
+  color: var(--cyan-bright);
+  text-shadow: 0 0 24px oklch(0.76 0.12 202 / 0.7);
+  opacity: 0;
+}
+.rl-countdown.is-visible { animation: rlCountdownPulse 0.85s ease; }
+@keyframes rlCountdownPulse {
+  0%   { opacity: 0; transform: translateX(-50%) scale(1.4); }
+  30%  { opacity: 1; transform: translateX(-50%) scale(1); }
+  80%  { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
+}
+
+.rl-flight-caption {
+  position: absolute;
+  bottom: calc(28px + var(--safe-b));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  margin: 0;
+  font-size: clamp(13px, 3.2vw, 16px);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  background: oklch(0.1 0.02 264 / 0.55);
+  padding: 8px 18px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  white-space: nowrap;
+}
+.rl-flight-caption.is-visible { opacity: 1; }
+
+/* ============================================================
+   画面3: 結果画面(共通の枠。ランクごとの中身は差分クラスで変える)
+   ============================================================ */
+
+.rl-screen-result {
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: clamp(20px, 5vw, 40px) 16px;
+}
+
+.rl-result-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background 0.4s ease;
+}
+
+.rl-result-content {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 2.4vw, 18px);
+  animation: rlFadeUp 0.5s ease;
+}
+
+.rl-result-title-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 6px 10px;
+}
+.rl-result-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(28px, 7vw, 46px);
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.rl-result-illustration {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  overflow: visible;
+}
+
+.rl-result-dest {
+  margin: 0;
+  font-size: clamp(13px, 3.2vw, 15px);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.rl-again-btn {
+  margin-top: 4px;
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.rl-again-btn:hover { background: var(--panel-2); transform: translateY(-1px); }
+.rl-again-btn:active { transform: translateY(0); }
+
+/* ---- ランク別: 称号テキストの質感(不時着級 → 未知の惑星到達級で段階的に豪華になる) ---- */
+
+.rl-title-crash {
+  color: oklch(0.62 0.01 260);
+  text-shadow: 1px 0 0 oklch(0.1 0 0 / 0.4), -1px 1px 0 oklch(0.9 0 0 / 0.15);
+  filter: drop-shadow(0 2px 0 oklch(0.1 0 0 / 0.3));
+  position: relative;
+}
+.rl-title-crash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg, transparent 46%, oklch(0.08 0 0 / 0.55) 47%, transparent 49%),
+    linear-gradient(72deg, transparent 60%, oklch(0.08 0 0 / 0.5) 61%, transparent 63%),
+    linear-gradient(130deg, transparent 25%, oklch(0.08 0 0 / 0.45) 26%, transparent 28%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.rl-title-space_entry {
+  color: var(--text);
+  text-shadow: 0 0 12px oklch(0.76 0.12 202 / 0.5);
+}
+
+.rl-title-moon {
+  background: linear-gradient(90deg, oklch(0.92 0.02 260), oklch(0.8 0.1 220), oklch(0.92 0.02 260));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 22px oklch(0.85 0.08 220 / 0.5);
+}
+
+.rl-title-mars {
+  background: linear-gradient(90deg, oklch(0.78 0.2 42), oklch(0.68 0.22 25), oklch(0.8 0.19 55));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 4px 18px oklch(0.6 0.2 30 / 0.55);
+}
+
+.rl-title-uranus {
+  color: oklch(0.92 0.06 200);
+  text-shadow: 0 0 10px oklch(0.85 0.1 195 / 0.9), 0 0 28px oklch(0.75 0.12 200 / 0.7);
+  animation: rlGlowPulse 2.4s ease-in-out infinite;
+}
+
+.rl-title-neptune {
+  background: linear-gradient(90deg, oklch(0.72 0.16 255), oklch(0.6 0.2 275), oklch(0.75 0.14 235));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 30px oklch(0.55 0.2 260 / 0.7);
+  animation: rlGlowPulse 2.6s ease-in-out infinite;
+}
+
+.rl-title-galaxy {
+  background: linear-gradient(90deg, oklch(0.85 0.15 330), oklch(0.75 0.18 280), oklch(0.8 0.16 200), oklch(0.85 0.15 330));
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 34px oklch(0.75 0.18 280 / 0.6);
+  animation: rlGlowPulse 2.2s ease-in-out infinite, rlGradientShift 4s linear infinite;
+}
+
+.rl-title-unknown {
+  background: linear-gradient(90deg, oklch(0.9 0.18 40), oklch(0.85 0.2 340), oklch(0.85 0.18 140), oklch(0.88 0.19 260), oklch(0.9 0.18 40));
+  background-size: 300% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 42px oklch(0.85 0.2 40 / 0.7);
+  animation: rlGlowPulse 1.8s ease-in-out infinite, rlGradientShift 3s linear infinite;
+}
+
+@keyframes rlGlowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+@keyframes rlGradientShift { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+/* ---- ランク別: 結果画面の背景トーン(段階的に豪華になる。イラストの背景色は resultBg に直接反映される) ---- */
+.rl-bg-crash { background: linear-gradient(180deg, oklch(0.24 0.03 230), oklch(0.1 0.02 235)); }
+.rl-bg-space_entry { background: radial-gradient(ellipse 70% 60% at 50% 40%, oklch(0.22 0.04 264), oklch(0.08 0.02 264)); }
+.rl-bg-moon { background: radial-gradient(ellipse 70% 60% at 50% 30%, oklch(0.24 0.04 240), oklch(0.06 0.02 264)); }
+.rl-bg-mars { background: linear-gradient(180deg, oklch(0.22 0.04 30), oklch(0.12 0.03 20)); }
+.rl-bg-uranus { background: radial-gradient(ellipse 80% 70% at 50% 45%, oklch(0.28 0.06 200), oklch(0.08 0.02 220)); }
+.rl-bg-neptune { background: radial-gradient(ellipse 80% 70% at 50% 45%, oklch(0.22 0.09 262), oklch(0.05 0.03 264)); }
+.rl-bg-galaxy { background: radial-gradient(ellipse 90% 80% at 50% 40%, oklch(0.2 0.1 300), oklch(0.05 0.02 264)); }
+.rl-bg-unknown { background: radial-gradient(ellipse 100% 90% at 50% 45%, oklch(0.28 0.14 320), oklch(0.06 0.03 264)); }
+
+/* ---------------- 開発/確認用コントロール ---------------- */
+
+.rl-dev-controls {
+  position: fixed;
+  left: 50%;
+  top: calc(8px + var(--safe-t));
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 96vw;
+  padding: 6px;
+}
+.rl-dev-controls button {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: oklch(0.14 0.03 264 / 0.75);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 11px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.rl-dev-controls button:hover { color: var(--text); }
+.rl-dev-toggle {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-dim); font-weight: 700;
+  padding: 6px 10px;
+}
+
+/* ---------------- レスポンシブ ---------------- */
+
+@media (max-width: 480px) {
+  .rl-result-title { font-size: clamp(24px, 8vw, 34px); }
+  .rl-rocket-svg { width: clamp(96px, 26vw, 160px); }
+}
+
+@media (min-width: 900px) {
+  .rl-result-illustration { max-width: 640px; }
+  .rl-setup-card { width: 480px; }
+}
+
+/* ---------------- アクセシビリティ ---------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-stars, .rl-title-uranus, .rl-title-neptune, .rl-title-galaxy, .rl-title-unknown {
+    animation: none !important;
+  }
+  .rl-rocket-wrap.is-bouncing, .rl-rocket-wrap.is-igniting, .rl-rocket-wrap.is-flying, .rl-rocket-wrap.is-tumbling,
+  .rl-countdown.is-visible {
+    animation: none !important;
+  }
+}
