@@ -16,6 +16,8 @@ export interface ParticipantSummary {
   displayName: string;
   role: ParticipantRole;
   joinedAt: string;
+  /** 他の参加者へ自分のプロフィール(名前・スコア)を共有結果で公開するかどうか。既定は公開。 */
+  isProfilePublic?: boolean;
 }
 
 export interface RoomDetail extends RoomSummary {
@@ -63,6 +65,7 @@ export interface SessionResultParticipantSource {
   participantId: string;
   displayName: string;
   role: ParticipantRole;
+  isProfilePublic: boolean;
   answers: SessionResultAnswer[];
 }
 
@@ -76,6 +79,8 @@ export interface ParticipantQuizResult {
   participantId: string;
   displayName: string;
   role: ParticipantRole;
+  /** 本人の結果としてレスポンスへ含める場合のみ設定される。他参加者向けの一覧からは取り除かれる。 */
+  isProfilePublic?: boolean;
   answeredCount: number;
   correctCount: number;
   power: number;
@@ -114,6 +119,12 @@ export interface GameRepository {
   authenticateParticipant(roomCode: string, accessToken: string): Promise<AuthenticatedParticipant>;
   /** ホストが分野を選ぶ。部屋がlobby状態の間だけ許可される。 */
   selectGenre(code: string, accessToken: string, genre: GameGenre): Promise<RoomSummary>;
+  /** 参加者が自分のプロフィール公開・非公開を切り替える。ロビー・ゲーム中いつでも呼べる。 */
+  setProfileVisibility(
+    code: string,
+    accessToken: string,
+    isProfilePublic: boolean,
+  ): Promise<ParticipantSummary>;
   startSession(
     code: string,
     accessToken: string,

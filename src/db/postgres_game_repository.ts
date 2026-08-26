@@ -34,6 +34,7 @@ interface ParticipantRow extends QueryResultRow {
   display_name: string;
   role: ParticipantRole;
   joined_at: Date | string;
+  is_profile_public: boolean;
 }
 
 interface SessionRow extends QueryResultRow {
@@ -64,6 +65,7 @@ interface SessionResultRow extends QueryResultRow {
   participant_id: string;
   display_name_snapshot: string;
   role_snapshot: ParticipantRole;
+  is_profile_public: boolean;
   question_index: number | null;
   selected_option: number | null;
   response_time_ms: number | null;
@@ -101,6 +103,7 @@ function mapParticipant(row: ParticipantRow): ParticipantSummary {
     displayName: row.display_name,
     role: row.role,
     joinedAt: toIso(row.joined_at),
+    isProfilePublic: row.is_profile_public,
   };
 }
 
@@ -183,7 +186,7 @@ export class PostgresGameRepository implements GameRepository {
         const participantResult = await client.query<ParticipantRow>(
           `INSERT INTO participant (room_id, display_name, role, access_token_hash)
            VALUES ($1, $2, 'host', $3)
-           RETURNING id, display_name, role, joined_at`,
+           RETURNING id, display_name, role, joined_at, is_profile_public`,
           [room.id, displayName, accessTokenHash],
         );
         await client.query("COMMIT");
@@ -231,7 +234,7 @@ export class PostgresGameRepository implements GameRepository {
       const participantResult = await client.query<ParticipantRow>(
         `INSERT INTO participant (room_id, display_name, role, access_token_hash)
          VALUES ($1, $2, 'player', $3)
-         RETURNING id, display_name, role, joined_at`,
+         RETURNING id, display_name, role, joined_at, is_profile_public`,
         [room.id, displayName, accessTokenHash],
       );
       await client.query("COMMIT");
@@ -262,7 +265,7 @@ export class PostgresGameRepository implements GameRepository {
     }
 
     const participants = await this.pool.query<ParticipantRow>(
-      `SELECT id, display_name, role, joined_at
+      `SELECT id, display_name, role, joined_at, is_profile_public
        FROM participant
        WHERE room_id = $1 AND left_at IS NULL
        ORDER BY joined_at, id`,
@@ -293,7 +296,7 @@ export class PostgresGameRepository implements GameRepository {
   ): Promise<AuthenticatedParticipant> {
     const tokenHash = await hashAccessToken(accessToken);
     const result = await this.pool.query<ParticipantRow & { room_id: string }>(
-      `SELECT p.id, p.display_name, p.role, p.joined_at, p.room_id
+      `SELECT p.id, p.display_name, p.role, p.joined_at, p.is_profile_public, p.room_id
        FROM participant p
        JOIN room r ON r.id = p.room_id
        WHERE r.code = $1
@@ -344,6 +347,30 @@ export class PostgresGameRepository implements GameRepository {
       throw new ApiError(403, "HOST_REQUIRED", "A valid host token is required");
     }
     return mapRoom(room);
+  }
+
+  async setProfileVisibility(
+    code: string,
+    accessToken: string,
+    isProfilePublic: boolean,
+  ): Promise<ParticipantSummary> {
+    const tokenHash = await hashAccessToken(accessToken);
+    const result = await this.pool.query<ParticipantRow>(
+      `UPDATE participant p
+       SET is_profile_public = $3
+       FROM room r
+       WHERE p.room_id = r.id
+         AND r.code = $1
+         AND p.access_token_hash = $2
+         AND p.left_at IS NULL
+       RETURNING p.id, p.display_name, p.role, p.joined_at, p.is_profile_public`,
+      [code, tokenHash, isProfilePublic],
+    );
+    const participant = result.rows[0];
+    if (!participant) {
+      throw new ApiError(401, "AUTHENTICATION_FAILED", "Invalid room code or access token");
+    }
+    return mapParticipant(participant);
   }
 
   async startSession(
@@ -480,9 +507,10 @@ export class PostgresGameRepository implements GameRepository {
     }
 
     const result = await this.pool.query<SessionResultRow>(
-      `SELECT sp.participant_id, sp.display_name_snapshot, sp.role_snapshot,
+      `SELECT sp.participant_id, sp.display_name_snapshot, sp.role_snapshot, p.is_profile_public,
          a.question_index, a.selected_option, a.response_time_ms
        FROM session_participant sp
+       JOIN participant p ON p.id = sp.participant_id
        LEFT JOIN answer a
          ON a.game_session_id = sp.game_session_id
         AND a.participant_id = sp.participant_id
@@ -499,6 +527,7 @@ export class PostgresGameRepository implements GameRepository {
           participantId: row.participant_id,
           displayName: row.display_name_snapshot,
           role: row.role_snapshot,
+          isProfilePublic: row.is_profile_public,
           answers: [],
         };
         participants.set(row.participant_id, participant);

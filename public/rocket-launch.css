@@ -268,8 +268,38 @@ body {
   overflow: visible;
 }
 .rl-flame { transform-box: fill-box; transform-origin: 50% 0%; opacity: 0; transition: opacity 0.3s ease; }
-.rl-rocket-hatch { opacity: 0; transition: opacity 0.2s ease; }
+.rl-rocket-hatch { opacity: 0; transition: opacity 0.25s ease; }
 .rl-rocket-hatch.is-open { opacity: 1; }
+.rl-rocket-stairs rect { fill: oklch(0.62 0.02 262); }
+
+.rl-rocket-tophatch-lid {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rl-rocket-wrap.is-hatch-open .rl-rocket-tophatch-lid {
+  transform: rotate(-118deg) translateY(-4px);
+}
+
+/* --- 搭乗するクルー(ルーム人数に応じて可変) --- */
+.rl-runway-bot--walk { transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.rl-runway-bot-bob { animation: rl-walk-bob 0.32s ease-in-out infinite; }
+@keyframes rl-walk-bob { 50% { transform: translateY(-4px); } }
+.rl-runway-bot--walk.is-entering { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.4); }
+
+.rl-runway-bot--toss {
+  transform: translateY(-260%) scale(0.55) rotate(-25deg);
+  opacity: 0;
+}
+.rl-runway-bot--toss.is-tossed {
+  animation: rl-toss-fall 0.8s cubic-bezier(0.3, 0.7, 0.35, 1) var(--toss-delay, 0ms) both;
+}
+@keyframes rl-toss-fall {
+  0% { transform: translateY(-260%) scale(0.55) rotate(-25deg); opacity: 0; }
+  15% { opacity: 1; }
+  70% { transform: translateY(6%) scale(0.42) rotate(10deg); opacity: 1; }
+  100% { transform: translateY(0) scale(0.32) rotate(0deg); opacity: 0; }
+}
 
 .rl-rocket-smoke {
   position: absolute;
@@ -551,9 +581,23 @@ body {
 
 /* ---------------- レスポンシブ ---------------- */
 
+@media (max-width: 760px) {
+  .rl-rocket-svg { width: clamp(190px, 52vw, 280px); }
+  .rl-runway-bot { width: clamp(40px, 11vw, 60px); }
+  .rl-countdown { font-size: clamp(56px, 20vw, 88px); }
+  .rl-flight-caption { font-size: clamp(14px, 4vw, 17px); padding: 9px 20px; }
+  .rl-setup-card { width: min(calc(100vw - 32px), 440px); }
+  .rl-launch-btn { min-height: 62px; font-size: 17px; }
+}
+
 @media (max-width: 480px) {
   .rl-result-title { font-size: clamp(24px, 8vw, 34px); }
-  .rl-rocket-svg { width: clamp(96px, 26vw, 160px); }
+  .rl-rocket-svg { width: clamp(170px, 58vw, 240px); }
+}
+
+@media (max-height: 620px) and (max-width: 760px) {
+  .rl-rocket-svg { width: clamp(150px, 40vw, 220px); }
+  .rl-countdown { font-size: clamp(44px, 16vw, 68px); }
 }
 
 @media (min-width: 900px) {
@@ -570,5 +614,11 @@ body {
   .rl-rocket-wrap.is-bouncing, .rl-rocket-wrap.is-igniting, .rl-rocket-wrap.is-flying, .rl-rocket-wrap.is-tumbling,
   .rl-countdown.is-visible {
     animation: none !important;
+  }
+  .rl-runway-bot-bob, .rl-runway-bot--toss.is-tossed {
+    animation: none !important;
+  }
+  .rl-runway-bot--walk, .rl-runway-bot--toss, .rl-rocket-tophatch-lid {
+    transition: none !important;
   }
 }

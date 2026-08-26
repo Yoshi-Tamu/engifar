@@ -55,6 +55,9 @@ class FakeRepository implements GameRepository {
   selectGenre(): Promise<RoomSummary> {
     return Promise.reject(new Error("not used"));
   }
+  setProfileVisibility(): Promise<import("../src/types.ts").ParticipantSummary> {
+    return Promise.reject(new Error("not used"));
+  }
   startSession(): Promise<GameSessionSummary> {
     return Promise.reject(new Error("not used"));
   }

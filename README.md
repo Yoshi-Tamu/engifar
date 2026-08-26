@@ -69,6 +69,7 @@ JSONレスポンスは成功時に `{ "data": ... }`、失敗時に
 | `POST` | `/api/quiz/questions/:index/grade` | 制限時間後に採点・解説を取得 | 問題トークン |
 | `POST` | `/api/rooms` | 部屋とホストを作成 | なし |
 | `POST` | `/api/rooms/:code/participants` | 部屋へ参加 | なし |
+| `PUT` | `/api/rooms/:code/participants/visibility` | 自分のプロフィール公開・非公開を切り替える | 参加者 |
 | `GET` | `/api/rooms/:code` | 部屋と参加者一覧を取得 | 参加者 |
 | `POST` | `/api/rooms/:code/sessions` | クイズ設定に沿ったゲームを開始 | ホスト |
 | `GET` | `/api/sessions/:id` | 参加中セッションの進行状況を取得 | 参加者 |

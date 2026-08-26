@@ -150,6 +150,17 @@ function quizSelectedOptionFrom(body: JsonRecord): number | null {
 
 const GAME_GENRES: readonly GameGenre[] = ["web", "linebot", "modeling", "game"];
 
+function isProfilePublicFrom(body: JsonRecord): boolean {
+  if (typeof body.isProfilePublic !== "boolean") {
+    throw new ApiError(
+      400,
+      "INVALID_PROFILE_VISIBILITY",
+      "isProfilePublic must be a boolean",
+    );
+  }
+  return body.isProfilePublic;
+}
+
 function genreFrom(body: JsonRecord): GameGenre {
   const genre = body.genre;
   if (typeof genre !== "string" || !GAME_GENRES.includes(genre as GameGenre)) {
@@ -289,6 +300,19 @@ async function handleApi(
     return json({ data: result });
   }
 
+  const participantVisibilityMatch = pathname.match(
+    /^\/api\/rooms\/([^/]+)\/participants\/visibility$/,
+  );
+  if (request.method === "PUT" && participantVisibilityMatch) {
+    const body = await readJsonObject(request);
+    const result = await repository.setProfileVisibility(
+      roomCode(decodeURIComponent(participantVisibilityMatch[1])),
+      bearerToken(request),
+      isProfilePublicFrom(body),
+    );
+    return json({ data: result });
+  }
+
   const roomSessionsMatch = pathname.match(/^\/api\/rooms\/([^/]+)\/sessions$/);
   if (request.method === "POST" && roomSessionsMatch) {
     const result = await repository.startSession(
@@ -343,6 +367,7 @@ async function handleApi(
         participantId: participant.participantId,
         displayName: participant.displayName,
         role: participant.role,
+        isProfilePublic: participant.isProfilePublic,
         ...score,
         averageResponseTimeMs: responseTimes.length
           ? Math.round(
@@ -382,6 +407,12 @@ async function handleApi(
       0,
     );
     const possibleAnswerCount = participants.length * source.session.questionCount;
+    // 非公開に設定した参加者の名前・スコアは、本人以外の一覧からは取り除く。
+    const visibleParticipants = participants
+      .filter((participant) =>
+        participant.isProfilePublic || participant.participantId === source.requesterParticipantId
+      )
+      .map(({ isProfilePublic: _isProfilePublic, ...visible }) => visible);
     const results: SessionResults = {
       sessionId: source.session.id,
       questionCount: source.session.questionCount,
@@ -402,7 +433,7 @@ async function handleApi(
         safety: safetyFromCategoryScores(Object.values(teamCategoryScores)),
         categoryScores: teamCategoryScores,
       },
-      participants,
+      participants: visibleParticipants,
     };
     return json({ data: results });
   }

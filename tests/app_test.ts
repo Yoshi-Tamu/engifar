@@ -62,6 +62,7 @@ class FakeRepository implements GameRepository {
     participantId: membership.participant.id,
     displayName: membership.participant.displayName,
     role: membership.participant.role,
+    isProfilePublic: true,
     answers: [
       { questionIndex: 0, selectedOption: 0, responseTimeMs: 500 },
       { questionIndex: 1, selectedOption: 3, responseTimeMs: 700 },
@@ -108,6 +109,20 @@ class FakeRepository implements GameRepository {
     }
     this.selectedGenre = genre;
     return Promise.resolve({ ...membership.room, genre });
+  }
+
+  setProfileVisibilityCalls: boolean[] = [];
+
+  setProfileVisibility(
+    _code: string,
+    accessToken: string,
+    isProfilePublic: boolean,
+  ): Promise<import("../src/types.ts").ParticipantSummary> {
+    if (accessToken !== TOKEN) {
+      throw new ApiError(401, "AUTHENTICATION_FAILED", "Invalid room code or access token");
+    }
+    this.setProfileVisibilityCalls.push(isProfilePublic);
+    return Promise.resolve({ ...membership.participant, isProfilePublic });
   }
 
   startSession(
@@ -409,6 +424,7 @@ Deno.test("personal and team results are derived from all stored participant ans
       participantId: secondParticipantId,
       displayName: "未回答ユーザー",
       role: "player",
+      isProfilePublic: true,
       answers: [],
     },
   ];

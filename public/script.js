@@ -45,6 +45,19 @@ import {
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function wait(milliseconds) {
+    return new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds));
+  }
+
+  const CREW_COLORS = ["#54d37c", "#5ca9ff", "#f5cf4b", "#ff665f", "#b889ff", "#62e4ec"];
+
+  function colorForParticipant(participant, index, selfParticipantId, selfColor) {
+    if (participant.id === selfParticipantId) return selfColor;
+    let hash = 0;
+    for (const character of participant.id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    return CREW_COLORS[(hash + index) % CREW_COLORS.length];
+  }
+
   async function requestApi(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (options.body !== undefined && !headers.has("content-type")) {
@@ -110,6 +123,9 @@ import {
     authoritativeResults = results;
     state.quiz.index = results.questionCount;
     state.metrics = metricsFromResult(results.personal);
+    if (typeof results.personal.isProfilePublic === "boolean") {
+      state.player.isProfilePublic = results.personal.isProfilePublic;
+    }
     persist(state);
     return results;
   }
@@ -183,8 +199,9 @@ import {
       status: "setup",
       playerConfigured: false,
       cardOpened: false,
-      player: { name: "CREW MEMBER", color: "#54d37c" },
-      room: { mode: "create", name: "ロケット部", code: "------", sessionId: null },
+      pngSaved: false,
+      player: { name: "CREW MEMBER", color: "#54d37c", isProfilePublic: true },
+      room: { mode: "create", name: "ロケット部", code: "------", sessionId: null, participants: [] },
       quiz: {
         index: 0,
         answers: Array(quizConfig.questionCount).fill(null),
@@ -227,6 +244,17 @@ import {
     const outcome = source.outcome && metrics ? calculateOutcome(metrics) : null;
 
     const name = String(playerSource.name || "CREW MEMBER").trim().slice(0, 18) || "CREW MEMBER";
+    const participants = Array.isArray(roomSource.participants)
+      ? roomSource.participants
+        .map((participant) => ({
+          id: String((participant && participant.id) || ""),
+          displayName: String((participant && participant.displayName) || "CREW MEMBER").trim().slice(0, 50) ||
+            "CREW MEMBER",
+          color: normalizeColor(participant && participant.color)
+        }))
+        .filter((participant) => participant.id)
+        .slice(0, 500)
+      : [];
     return {
       version: 4,
       missionId: String(source.missionId || fallback.missionId),
@@ -234,12 +262,18 @@ import {
       status: String(source.status || (outcome ? "result" : metrics ? "rocket" : "setup")),
       playerConfigured: Boolean(source.playerConfigured || playerSource.name || metrics),
       cardOpened: Boolean(source.cardOpened),
-      player: { name, color: normalizeColor(playerSource.color) },
+      pngSaved: Boolean(source.pngSaved),
+      player: {
+        name,
+        color: normalizeColor(playerSource.color),
+        isProfilePublic: playerSource.isProfilePublic !== false
+      },
       room: {
         mode: roomSource.mode === "join" ? "join" : "create",
         name: String(roomSource.name || "ロケット部").trim().slice(0, 20) || "ロケット部",
         code: String(roomSource.code || "------").trim().toUpperCase().slice(0, 8) || "------",
-        sessionId: typeof roomSource.sessionId === "string" ? roomSource.sessionId : null
+        sessionId: typeof roomSource.sessionId === "string" ? roomSource.sessionId : null,
+        participants
       },
       quiz: {
         index: Math.round(clamp(safeNumber(quizSource.index, 0), 0, quizConfig.questionCount)),
@@ -539,6 +573,40 @@ import {
     roomCodeValue.textContent = state.room.code;
     setStateLink(document.querySelector("#room-home-link"), "./index.html", state);
 
+    const copyButton = document.querySelector("#room-code-copy-button");
+    const copyLabel = document.querySelector("#room-code-copy-label");
+    if (copyButton && copyLabel) {
+      let copyResetTimer = null;
+      copyButton.addEventListener("click", async () => {
+        const code = state.room.code;
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(code);
+          copied = true;
+        } catch {
+          try {
+            const scratch = document.createElement("textarea");
+            scratch.value = code;
+            scratch.style.position = "fixed";
+            scratch.style.opacity = "0";
+            document.body.append(scratch);
+            scratch.select();
+            copied = document.execCommand("copy");
+            scratch.remove();
+          } catch {
+            copied = false;
+          }
+        }
+        if (copyResetTimer !== null) globalThis.clearTimeout(copyResetTimer);
+        copyLabel.textContent = copied ? "コピーしました！" : "コピーできませんでした";
+        copyButton.classList.toggle("is-copied", copied);
+        copyResetTimer = globalThis.setTimeout(() => {
+          copyLabel.textContent = "ROOM CODE";
+          copyButton.classList.remove("is-copied");
+        }, 1800);
+      });
+    }
+
     const auth = loadRoomAuth(state.room.code);
     if (!auth) {
       startButton.disabled = true;
@@ -547,18 +615,20 @@ import {
       return;
     }
 
-    const crewColors = ["#54d37c", "#5ca9ff", "#f5cf4b", "#ff665f", "#b889ff", "#62e4ec"];
     let enteredQuiz = false;
     let refreshing = false;
 
     function colorFor(participant, index) {
-      if (participant.id === auth.participantId) return state.player.color;
-      let hash = 0;
-      for (const character of participant.id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-      return crewColors[(hash + index) % crewColors.length];
+      return colorForParticipant(participant, index, auth.participantId, state.player.color);
     }
 
     function renderParticipants(participants) {
+      state.room.participants = participants.map((participant, index) => ({
+        id: participant.id,
+        displayName: participant.displayName,
+        color: colorFor(participant, index)
+      }));
+      persist(state);
       playerList.replaceChildren();
       participants.forEach((participant, index) => {
         const card = document.createElement("div");
@@ -839,7 +909,7 @@ import {
         if (syncTimer !== null) globalThis.clearInterval(syncTimer);
         state.outcome = null;
         state.status = "rocket";
-        goTo("./rocket.html", state, true);
+        goTo("./loading.html", state, true);
       } catch (error) {
         elements.feedbackIcon.textContent = "!";
         elements.feedbackTitle.textContent = "結果を取得できませんでした";
@@ -1200,7 +1270,7 @@ import {
         state.metrics = computeMetrics(state.quiz.records);
         persist(state);
       }
-      goTo("./rocket.html", state, true);
+      goTo("./loading.html", state, true);
       return;
     }
 
@@ -1282,7 +1352,7 @@ import {
       state.metrics = computeMetrics(state.quiz.records);
       state.outcome = null;
       state.status = "rocket";
-      goTo("./rocket.html", state, true);
+      goTo("./loading.html", state, true);
     }
 
     async function showReview(token) {
@@ -1437,6 +1507,55 @@ import {
     void renderQuestion();
   }
 
+  function initLoading() {
+    if (!requireMetrics()) return;
+    const avatar = document.querySelector("#loading-avatar");
+    const hint = document.querySelector("#loading-hint");
+    if (avatar) avatar.style.setProperty("--crew-color", state.player.color);
+
+    const hints = [
+      "出力強度を集計しています…",
+      "6分野のバランスを確認しています…",
+      "到達可能な軌道を計算しています…",
+      "クルーの搭乗準備をしています…"
+    ];
+    let hintIndex = 0;
+    const hintTimer = hint
+      ? globalThis.setInterval(() => {
+        hintIndex = (hintIndex + 1) % hints.length;
+        hint.textContent = hints[hintIndex];
+      }, 700)
+      : null;
+
+    async function proceed() {
+      const minWait = wait(reducedMotion ? 200 : 1700);
+      if (state.room.sessionId) {
+        const auth = loadRoomAuth(state.room.code);
+        if (auth) {
+          try {
+            const room = await requestApi(
+              `/api/rooms/${encodeURIComponent(state.room.code)}`,
+              { headers: bearerHeaders(auth) }
+            );
+            state.room.participants = room.participants.map((participant, index) => ({
+              id: participant.id,
+              displayName: participant.displayName,
+              color: colorForParticipant(participant, index, auth.participantId, state.player.color)
+            }));
+            persist(state);
+          } catch {
+            // ルームの最新人数を取得できなくても、直前のロビー時点の人数で搭乗演出を続行する。
+          }
+        }
+      }
+      await minWait;
+      if (hintTimer !== null) globalThis.clearInterval(hintTimer);
+      goTo("./rocket.html", state, true);
+    }
+
+    void proceed();
+  }
+
   function initRocket() {
     if (!requireMetrics()) return;
     const elements = {
@@ -1450,12 +1569,11 @@ import {
     const outcome = calculateOutcome(state.metrics);
     const rank = getFlightRank(outcome.altitude);
     const resultContent = globalThis.ROCKET_LAUNCH_RESULTS || {};
-    const botColors = ["oklch(0.62 0.20 24)", "oklch(0.62 0.17 253)", "oklch(0.83 0.16 93)", state.player.color];
-    const botSpots = [{ left: "28%", top: "78%" }, { left: "38%", top: "84%" }, { left: "60%", top: "84%" }, { left: "71%", top: "77%" }];
     const captions = { ground: "発射準備", sky: "上空へ", "atmosphere-edge": "大気圏付近", space: "宇宙空間", sea: "着水" };
+    const WALK_IN_MAX_CREW = 10;
+    const TOSS_MAX_VISIBLE = 20;
     let running = false;
 
-    const wait = (milliseconds) => new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds));
     const showScreen = (target) => [elements.setup, elements.launch, elements.result].forEach((screen) => {
       const active = screen === target;
       screen.classList.toggle("is-active", active);
@@ -1465,15 +1583,78 @@ import {
     const setCaption = (text) => { elements.caption.textContent = text; elements.caption.classList.toggle("is-visible", Boolean(text)); };
     const robotSvg = (color) => `<svg class="bot-svg" viewBox="0 0 100 130" role="img" aria-hidden="true"><ellipse cx="50" cy="118" rx="24" ry="7" fill="${color}" opacity="0.3"/><line x1="50" y1="10" x2="50" y2="24" stroke="${color}" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="8" r="6" fill="oklch(0.85 0.1 202)"/><rect x="20" y="22" width="60" height="76" rx="30" fill="${color}" stroke="oklch(0.2 0.02 260 / 0.25)" stroke-width="2"/><rect x="32" y="42" width="36" height="26" rx="12" fill="oklch(0.97 0.006 260)"/><circle cx="43" cy="55" r="4" fill="oklch(0.22 0.03 262)"/><circle cx="57" cy="55" r="4" fill="oklch(0.22 0.03 262)"/></svg>`;
 
-    async function boardBots() {
-      elements.bots.innerHTML = "";
-      const bots = botSpots.map((spot, index) => {
-        const bot = document.createElement("div");
-        bot.className = "rl-runway-bot"; bot.style.left = spot.left; bot.style.top = spot.top; bot.innerHTML = robotSvg(botColors[index]); elements.bots.append(bot); return bot;
+    function boardingRoster() {
+      const participants = Array.isArray(state.room.participants) ? state.room.participants : [];
+      if (participants.length) return participants.map((participant) => participant.color);
+      return [state.player.color];
+    }
+
+    // 10人以下: 一人ずつ歩いて階段を上り、扉からロケットへ乗り込む自然な演出。
+    async function boardCrewWalkIn(colors) {
+      elements.hatch.classList.add("is-open");
+      await wait(250);
+      const spawnSpots = colors.map((_color, index) => {
+        const side = index % 2 === 0 ? -1 : 1;
+        const lane = Math.floor(index / 2);
+        return { left: `${50 + side * (16 + lane * 9)}%`, top: `${88 - lane * 3}%` };
       });
-      await wait(120);
-      for (const bot of bots) { bot.style.left = "50%"; bot.style.top = "57%"; await wait(160); bot.classList.add("is-boarding"); }
-      await wait(300); elements.hatch.classList.add("is-open"); await wait(150); elements.hatch.classList.remove("is-open"); elements.bots.innerHTML = "";
+      const walkers = colors.map((color, index) => {
+        const walker = document.createElement("div");
+        walker.className = "rl-runway-bot rl-runway-bot--walk";
+        walker.style.left = spawnSpots[index].left;
+        walker.style.top = spawnSpots[index].top;
+        walker.innerHTML = `<div class="rl-runway-bot-bob">${robotSvg(color)}</div>`;
+        elements.bots.append(walker);
+        return walker;
+      });
+      await wait(100);
+      await Promise.all(walkers.map(async (walker, index) => {
+        await wait(index * 140);
+        walker.style.left = "47%";
+        walker.style.top = "82%";
+        await wait(430);
+        walker.style.left = "51%";
+        walker.style.top = "58%";
+        await wait(430);
+        walker.classList.add("is-entering");
+        await wait(240);
+        walker.remove();
+      }));
+      await wait(150);
+      elements.hatch.classList.remove("is-open");
+    }
+
+    // 11人以上: ロケット上部の蓋が開き、クルーが一斉に投げ込まれるコミカルな演出。
+    async function boardCrewMassBatch(colors) {
+      const visible = colors.slice(0, TOSS_MAX_VISIBLE);
+      elements.rocket.classList.add("is-hatch-open");
+      await wait(550);
+      visible.forEach((color, index) => {
+        const bot = document.createElement("div");
+        bot.className = "rl-runway-bot rl-runway-bot--toss";
+        const scatter = (index % 5 - 2) * 6;
+        bot.style.left = `${50 + scatter}%`;
+        bot.style.top = "34%";
+        bot.style.setProperty("--toss-delay", `${index * 45}ms`);
+        bot.innerHTML = robotSvg(color);
+        elements.bots.append(bot);
+      });
+      await wait(30);
+      elements.bots.querySelectorAll(".rl-runway-bot--toss").forEach((bot) => bot.classList.add("is-tossed"));
+      await wait(950);
+      elements.bots.innerHTML = "";
+      if (colors.length > 1) setCaption(`${colors.length}人のクルーが搭乗完了！`);
+      await wait(500);
+      elements.rocket.classList.remove("is-hatch-open");
+      await wait(300);
+      setCaption("");
+    }
+
+    async function boardCrew() {
+      elements.bots.innerHTML = "";
+      const colors = boardingRoster();
+      if (colors.length > WALK_IN_MAX_CREW) await boardCrewMassBatch(colors);
+      else await boardCrewWalkIn(colors);
     }
     async function bounceRocket() { elements.rocket.classList.add("is-bouncing"); await wait(700); elements.rocket.classList.remove("is-bouncing"); }
     async function igniteRocket() {
@@ -1504,11 +1685,126 @@ import {
     }
     async function runLaunchSequence() {
       if (running) return; running = true; showScreen(elements.launch); setSkyLeg("ground"); elements.ground.classList.remove("is-hidden"); elements.rocket.className = "rl-rocket-wrap"; elements.approach.classList.remove("is-visible"); setCaption("");
-      await boardBots(); await bounceRocket(); await igniteRocket(); await liftoffRocket(); await flyThrough(); showResult(); running = false;
+      await boardCrew(); await bounceRocket(); await igniteRocket(); await liftoffRocket(); await flyThrough(); showResult(); running = false;
     }
     if (state.outcome) showResult();
     else elements.launchButton.addEventListener("click", runLaunchSequence);
-    elements.resultButton.addEventListener("click", () => goTo("./result.html", state));
+    elements.resultButton.addEventListener("click", () => {
+      goTo(state.room.sessionId ? "./ranking.html" : "./result.html", state);
+    });
+  }
+
+  function initRanking() {
+    if (!requireOutcome()) return;
+    if (!state.room.sessionId) {
+      goTo("./result.html", state, true);
+      return;
+    }
+    const auth = loadRoomAuth(state.room.code);
+    if (!auth) {
+      goTo("./index.html", state, true);
+      return;
+    }
+
+    const list = document.querySelector("#ranking-list");
+    const hint = document.querySelector("#ranking-hint");
+    const nextButton = document.querySelector("#ranking-next-button");
+
+    async function reveal() {
+      let results;
+      try {
+        results = authoritativeResults || await fetchAuthoritativeResults(auth);
+      } catch (error) {
+        hint.textContent = `ランキングを取得できませんでした。${error.message}`;
+        nextButton.disabled = false;
+        return;
+      }
+      const ordered = [...results.participants].sort((a, b) =>
+        b.power - a.power || b.safety - a.safety
+      );
+      const revealOrder = [...ordered].reverse();
+
+      for (let index = 0; index < revealOrder.length; index += 1) {
+        const participant = revealOrder[index];
+        const rank = ordered.length - index;
+        const item = document.createElement("li");
+        item.className = "ranking-item";
+        if (participant.participantId === auth.participantId) item.classList.add("is-you");
+        if (rank === 1) item.classList.add("is-champion");
+        item.innerHTML = `<span class="ranking-place">${rank}</span><span class="ranking-name"></span><strong class="ranking-score">${participant.power}%</strong>`;
+        item.querySelector(".ranking-name").textContent = participant.displayName;
+        list.prepend(item);
+        globalThis.requestAnimationFrame(() => item.classList.add("is-revealed"));
+        hint.textContent = rank === 1 ? "1位は…！" : `${rank}位…`;
+        await wait(reducedMotion ? 80 : rank === 1 ? 1100 : 550);
+      }
+      hint.textContent = "発表終了！お疲れさまでした。";
+      nextButton.disabled = false;
+    }
+
+    nextButton.addEventListener("click", () => goTo("./award.html", state));
+    void reveal();
+  }
+
+  function initAward() {
+    if (!requireOutcome()) return;
+    if (!state.room.sessionId) {
+      goTo("./result.html", state, true);
+      return;
+    }
+    const auth = loadRoomAuth(state.room.code);
+    if (!auth) {
+      goTo("./index.html", state, true);
+      return;
+    }
+
+    const podium = document.querySelector("#podium");
+    const nextButton = document.querySelector("#award-next-button");
+
+    function colorForResultParticipant(participantId) {
+      const roster = Array.isArray(state.room.participants) ? state.room.participants : [];
+      const match = roster.find((participant) => participant.id === participantId);
+      if (match) return match.color;
+      return participantId === auth.participantId ? state.player.color : "#5ca9ff";
+    }
+
+    async function render() {
+      let results;
+      try {
+        results = authoritativeResults || await fetchAuthoritativeResults(auth);
+      } catch (error) {
+        podium.textContent = `表彰台のデータを取得できませんでした。${error.message}`;
+        return;
+      }
+      const ordered = [...results.participants].sort((a, b) =>
+        b.power - a.power || b.safety - a.safety
+      );
+      if (!ordered.length) {
+        podium.textContent = "参加者データがありません。";
+        return;
+      }
+      const topThree = ordered.slice(0, 3);
+      const medals = ["🥇", "🥈", "🥉"];
+      const podiumOrder = topThree.length === 3
+        ? [topThree[1], topThree[0], topThree[2]]
+        : topThree.length === 2
+        ? [topThree[1], topThree[0]]
+        : [topThree[0]];
+
+      podium.replaceChildren();
+      podiumOrder.forEach((participant) => {
+        const rank = ordered.indexOf(participant) + 1;
+        const step = document.createElement("div");
+        step.className = `podium-step podium-step--rank${rank}`;
+        if (participant.participantId === auth.participantId) step.classList.add("is-you");
+        step.innerHTML = `<b class="podium-medal">${medals[rank - 1]}</b><span class="crew-avatar crew-avatar--medium" style="--crew-color:${colorForResultParticipant(participant.participantId)}" aria-hidden="true"><i></i></span><strong class="podium-name"></strong><span class="podium-score">${participant.power}%</span>`;
+        step.querySelector(".podium-name").textContent = participant.displayName;
+        podium.append(step);
+      });
+    }
+
+    nextButton.addEventListener("click", () => goTo("./result.html", state));
+    void render();
   }
 
   function resultCopy(outcome, metrics) {
@@ -1686,6 +1982,51 @@ import {
       });
     }
 
+    const visibilityRow = document.querySelector("#visibility-toggle-row");
+    const visibilitySwitch = document.querySelector("#visibility-switch");
+    const visibilityStateLabel = document.querySelector("#visibility-switch-state");
+    const visibilityHint = document.querySelector("#visibility-toggle-hint");
+    if (auth && visibilityRow && visibilitySwitch && visibilityStateLabel && visibilityHint) {
+      visibilityRow.hidden = false;
+
+      function renderVisibility(isPublic) {
+        visibilitySwitch.setAttribute("aria-checked", String(isPublic));
+        visibilitySwitch.classList.toggle("is-public", isPublic);
+        visibilityStateLabel.textContent = isPublic ? "公開" : "非公開";
+        visibilityHint.textContent = isPublic
+          ? "チームの仲間にあなたの結果を表示しています"
+          : "あなたの結果はチームの仲間には表示されません";
+      }
+
+      renderVisibility(state.player.isProfilePublic !== false);
+
+      let togglingVisibility = false;
+      visibilitySwitch.addEventListener("click", async () => {
+        if (togglingVisibility) return;
+        togglingVisibility = true;
+        visibilitySwitch.disabled = true;
+        const next = !(state.player.isProfilePublic !== false);
+        try {
+          const updated = await requestApi(
+            `/api/rooms/${encodeURIComponent(state.room.code)}/participants/visibility`,
+            {
+              method: "PUT",
+              headers: bearerHeaders(auth),
+              body: JSON.stringify({ isProfilePublic: next })
+            }
+          );
+          state.player.isProfilePublic = updated.isProfilePublic !== false;
+          persist(state);
+          renderVisibility(state.player.isProfilePublic);
+        } catch (error) {
+          visibilityHint.textContent = `切り替えに失敗しました。${error.message}`;
+        } finally {
+          visibilitySwitch.disabled = false;
+          togglingVisibility = false;
+        }
+      });
+    }
+
     const cardLink = document.querySelector("#card-link");
     setStateLink(cardLink, "./card.html", state);
     cardLink.addEventListener("click", (event) => {
@@ -1694,16 +2035,34 @@ import {
       goTo("./card.html", state);
     });
 
+    function startNewMission() {
+      const fresh = createDefaultState();
+      fresh.player = { ...state.player };
+      fresh.playerConfigured = true;
+      goTo("./index.html", fresh);
+    }
+
     const retryButton = document.querySelector("#retry-button");
+    const retryWarning = document.querySelector("#retry-warning");
+    const retryWarningConfirm = document.querySelector("#retry-warning-confirm");
+    const retryWarningCancel = document.querySelector("#retry-warning-cancel");
+    retryWarning?.style.setProperty("--crew-color", state.player.color);
     retryButton.disabled = !state.cardOpened;
     retryButton.setAttribute("aria-disabled", String(!state.cardOpened));
     retryButton.title = state.cardOpened ? "もう一度チャレンジ" : "自己紹介カードを開くと次のチャレンジへ進めます";
     retryButton.addEventListener("click", () => {
       if (!state.cardOpened) return;
-      const fresh = createDefaultState();
-      fresh.player = { ...state.player };
-      fresh.playerConfigured = true;
-      goTo("./index.html", fresh);
+      if (!state.pngSaved && retryWarning) {
+        retryWarning.hidden = false;
+        globalThis.requestAnimationFrame(() => retryWarningCancel?.focus());
+        return;
+      }
+      startNewMission();
+    });
+    retryWarningConfirm?.addEventListener("click", startNewMission);
+    retryWarningCancel?.addEventListener("click", () => {
+      retryWarning.hidden = true;
+      retryButton.focus();
     });
   }
 
@@ -1968,6 +2327,8 @@ import {
         document.body.append(link);
         link.click();
         link.remove();
+        state.pngSaved = true;
+        persist(state);
         saveLabel.textContent = "保存しました！";
         globalThis.setTimeout(() => {
           saveButton.disabled = false;
@@ -2020,6 +2381,8 @@ import {
     }
 
     if (page === "rocket") initRocket();
+    else if (page === "ranking") initRanking();
+    else if (page === "award") initAward();
     else if (page === "result") initResult();
     else initCard();
   }
@@ -2027,6 +2390,7 @@ import {
   if (page === "home") initHome();
   else if (page === "room") initRoom();
   else if (page === "quiz") void initQuiz();
-  else if (["rocket", "result", "card"].includes(page)) void initAuthoritativeResultPage();
+  else if (page === "loading") initLoading();
+  else if (["rocket", "ranking", "award", "result", "card"].includes(page)) void initAuthoritativeResultPage();
   if (page === "home" || page === "room") initGuide();
 })();

@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07111f">
 <title>EngiFar - ロケット発射</title>
-<link rel="stylesheet" href="./rocket-launch.css?v=20260824-fix">
-<link rel="stylesheet" href="./rocket-result.css?v=20260824-altitude-impact">
+<link rel="stylesheet" href="./rocket-launch.css?v=20260826-flow">
+<link rel="stylesheet" href="./rocket-result.css?v=20260826-flow">
 <script src="./rocket-launch-results.js" defer></script>
-<script type="module" src="./script.js?v=20260825-progress-guard"></script>
+<script type="module" src="./script.js?v=20260826-flow"></script>
 </head>
 <body>
 <div class="rl-app" id="app" data-page="rocket">
@@ -25,7 +25,7 @@
       <div class="rl-brand">ENGIFAR</div>
       <h1 class="rl-setup-title">ロケット発射準備</h1>
       <p class="rl-setup-hint">クルーと一緒に、到達ランクを目指して出発します。</p>
-      <button type="button" class="rl-launch-btn" id="launchBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 2 5 6 5 10 0 3-2 6-5 8-3-2-5-5-5-8 0-4 2-8 5-10Z"/><circle cx="12" cy="10" r="1.6"/><path d="M8 16l-3 5M16 16l3 5"/></svg><span>ロケットを飛ばす</span></button>
+      <button type="button" class="rl-launch-btn" id="launchBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c2.8 1.6 4.6 4.6 4.6 8 0 3.2-1.5 6.4-4.6 9-3.1-2.6-4.6-5.8-4.6-9 0-3.4 1.8-6.4 4.6-8Z"/><circle cx="12" cy="10" r="1.6"/><path d="M8 16l-3 5M16 16l3 5"/></svg><span>ロケットを飛ばす</span></button>
     </div>
   </section>
 
@@ -41,7 +41,12 @@
         <div class="rl-rocket-smoke" id="rocketSmoke"></div>
         <svg class="rl-rocket-svg" id="rocketSvg" viewBox="0 0 220 400" role="img" aria-label="ロケット">
           <ellipse class="rl-rocket-glow" cx="110" cy="360" rx="70" ry="42" fill="oklch(0.7 0.19 45 / 0.35)"/><path class="rl-flame" id="rlFlame" d="M92 296 Q84 340 110 398 Q136 340 128 296 Q120 328 110 328 Q100 328 92 296 Z" fill="url(#rlFlameGrad)"/>
-          <path d="M78 278 L96 278 L90 308 L74 308 Z" fill="oklch(0.32 0.02 260)"/><path d="M124 278 L142 278 L146 308 L130 308 Z" fill="oklch(0.32 0.02 260)"/><rect x="66" y="238" width="88" height="60" rx="14" fill="oklch(0.38 0.03 262)"/><path d="M66 248 L18 294 L50 298 L66 268 Z" fill="oklch(0.7 0.12 202)"/><path d="M154 248 L202 294 L170 298 L154 268 Z" fill="oklch(0.7 0.12 202)"/><rect x="58" y="68" width="104" height="190" rx="42" fill="url(#rlBodyGrad)"/><rect x="58" y="148" width="104" height="10" fill="oklch(0.72 0.19 42)"/><rect x="58" y="166" width="104" height="6" fill="oklch(0.76 0.12 202)"/><rect class="rl-rocket-hatch" id="rlHatch" x="90" y="210" width="40" height="34" rx="8" fill="oklch(0.24 0.03 262)"/><circle cx="110" cy="116" r="30" fill="oklch(0.3 0.02 262)"/><circle cx="110" cy="116" r="24" fill="url(#rlWindowGrad)"/><ellipse cx="101" cy="106" rx="8" ry="5" fill="oklch(0.98 0.01 200 / 0.6)"/><path d="M58 68 Q58 4 110 2 Q162 4 162 68 Z" fill="url(#rlBodyGrad)"/>
+          <path d="M78 278 L96 278 L90 308 L74 308 Z" fill="oklch(0.32 0.02 260)"/><path d="M124 278 L142 278 L146 308 L130 308 Z" fill="oklch(0.32 0.02 260)"/><rect x="66" y="238" width="88" height="60" rx="14" fill="oklch(0.38 0.03 262)"/><path d="M66 248 L18 294 L50 298 L66 268 Z" fill="oklch(0.7 0.12 202)"/><path d="M154 248 L202 294 L170 298 L154 268 Z" fill="oklch(0.7 0.12 202)"/><rect x="58" y="68" width="104" height="190" rx="42" fill="url(#rlBodyGrad)"/><rect x="58" y="148" width="104" height="10" fill="oklch(0.72 0.19 42)"/><rect x="58" y="166" width="104" height="6" fill="oklch(0.76 0.12 202)"/>
+          <g class="rl-rocket-stairs" id="rlStairs"><rect x="86" y="244" width="30" height="6" rx="2"/><rect x="96" y="258" width="30" height="6" rx="2"/><rect x="106" y="272" width="30" height="6" rx="2"/><rect x="116" y="286" width="30" height="6" rx="2"/><rect x="126" y="300" width="30" height="6" rx="2"/></g>
+          <rect class="rl-rocket-hatch" id="rlHatch" x="90" y="210" width="40" height="34" rx="8" fill="oklch(0.24 0.03 262)"/>
+          <circle cx="110" cy="116" r="30" fill="oklch(0.3 0.02 262)"/><circle cx="110" cy="116" r="24" fill="url(#rlWindowGrad)"/><ellipse cx="101" cy="106" rx="8" ry="5" fill="oklch(0.98 0.01 200 / 0.6)"/>
+          <rect class="rl-rocket-tophatch-well" x="70" y="66" width="80" height="26" rx="10" fill="oklch(0.16 0.03 262)"/><rect class="rl-rocket-tophatch-lid" id="rlTopHatch" x="70" y="66" width="80" height="26" rx="10" fill="url(#rlBodyGrad)"/>
+          <path d="M58 68 Q58 4 110 2 Q162 4 162 68 Z" fill="url(#rlBodyGrad)"/>
         </svg>
       </div>
     </div>

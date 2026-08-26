@@ -28,6 +28,10 @@ const migrations: Migration[] = [
     version: "003_quiz_choice_order_version",
     url: new URL("../../migrations/003_quiz_choice_order_version.sql", import.meta.url),
   },
+  {
+    version: "004_participant_profile_visibility",
+    url: new URL("../../migrations/004_participant_profile_visibility.sql", import.meta.url),
+  },
 ];
 
 async function checksum(sql: string): Promise<string> {

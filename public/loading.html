@@ -2,10 +2,24 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="refresh" content="0;url=./quiz.html">
-  <title>EngiFar</title>
-  <script>location.replace("./quiz.html" + location.hash)</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>EngiFar | ミッション計算中</title>
+  <link rel="stylesheet" href="./style.css?v=20260826-flow">
+  <script type="module" src="./script.js?v=20260826-flow"></script>
 </head>
-<body><p>クイズ画面を準備しています…</p></body>
+<body>
+  <div class="app-shell loading-shell" id="app" data-page="loading">
+    <div class="space-background" aria-hidden="true"></div>
+    <main class="loading-main">
+      <div class="loading-orbit-ring" aria-hidden="true"></div>
+      <div class="loading-orbit-ring loading-orbit-ring--inner" aria-hidden="true"></div>
+      <span class="crew-avatar crew-avatar--large loading-avatar" id="loading-avatar" style="--crew-color:#54d37c" aria-hidden="true"><i></i></span>
+      <p class="eyebrow loading-eyebrow">MISSION CALCULATING</p>
+      <h1 class="loading-title">ミッションデータを計算中…</h1>
+      <p class="loading-hint" id="loading-hint">出力強度を集計しています…</p>
+      <div class="loading-bar" aria-hidden="true"><i></i></div>
+    </main>
+  </div>
+</body>
 </html>
